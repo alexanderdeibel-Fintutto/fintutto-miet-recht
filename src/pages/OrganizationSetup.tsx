@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, ArrowRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { organizationSchema } from '@/lib/validation';
 
 export default function OrganizationSetup() {
   const { user, refreshProfile } = useAuth();
@@ -16,19 +17,33 @@ export default function OrganizationSetup() {
   const [loading, setLoading] = useState(false);
   const [orgName, setOrgName] = useState('');
   const [orgType, setOrgType] = useState<string>('');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !orgName.trim()) return;
+    if (!user) return;
 
+    // Validate with zod
+    const result = organizationSchema.safeParse({
+      name: orgName,
+      type: orgType,
+    });
+
+    if (!result.success) {
+      setValidationError(result.error.errors[0]?.message || 'Ungültige Eingabe');
+      return;
+    }
+
+    setValidationError(null);
     setLoading(true);
+    
     try {
-      // Create organization
+      // Create organization with validated data
       const { data: org, error: orgError } = await supabase
         .from('organizations')
         .insert({
-          name: orgName.trim(),
-          type: orgType || null,
+          name: result.data.name,
+          type: result.data.type,
         })
         .select()
         .single();
@@ -81,9 +96,16 @@ export default function OrganizationSetup() {
                 id="orgName"
                 placeholder="z.B. Müller Immobilien GmbH"
                 value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
+                onChange={(e) => {
+                  setOrgName(e.target.value);
+                  setValidationError(null);
+                }}
+                maxLength={100}
                 required
               />
+              {validationError && (
+                <p className="text-sm text-destructive">{validationError}</p>
+              )}
             </div>
 
             <div className="space-y-2">
