@@ -52,7 +52,6 @@ export default function Pricing() {
           window.open(data.url, '_blank');
         }
       } catch (err) {
-        console.error('Portal error:', err);
         toast.error('Fehler beim Öffnen des Kundenportals');
       } finally {
         setLoadingPlan(null);
@@ -88,7 +87,6 @@ export default function Pricing() {
         window.location.href = data.url;
       }
     } catch (err) {
-      console.error('Checkout error:', err);
       toast.error('Fehler beim Erstellen der Checkout-Session');
     } finally {
       setLoadingPlan(null);

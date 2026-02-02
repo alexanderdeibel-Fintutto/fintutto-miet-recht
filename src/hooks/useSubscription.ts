@@ -50,7 +50,6 @@ export function useSubscription(): UseSubscriptionReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to check subscription';
       setError(errorMessage);
-      console.error('Subscription check error:', errorMessage);
       // Set default free state on error
       setSubscription({
         subscribed: false,

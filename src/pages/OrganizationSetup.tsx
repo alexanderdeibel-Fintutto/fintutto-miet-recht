@@ -65,7 +65,6 @@ export default function OrganizationSetup() {
       toast.success('Organisation erfolgreich erstellt!');
       navigate('/property');
     } catch (error: any) {
-      console.error('Error creating organization:', error);
       toast.error('Fehler beim Erstellen der Organisation');
     } finally {
       setLoading(false);

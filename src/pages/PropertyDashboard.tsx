@@ -48,7 +48,7 @@ export default function PropertyDashboard() {
         openTasks: tasksRes.count || 0,
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      // Stats fetch failed - continue with empty data
     } finally {
       setLoading(false);
     }
