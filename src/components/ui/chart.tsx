@@ -58,33 +58,72 @@ const ChartContainer = React.forwardRef<
 });
 ChartContainer.displayName = "Chart";
 
+/**
+ * ChartStyle sets CSS custom properties for chart theming using React's style prop.
+ * This approach is safer than dangerouslySetInnerHTML as it doesn't inject raw HTML.
+ * 
+ * Note: Color values in ChartConfig should always be validated CSS color values.
+ */
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color);
 
-  if (!colorConfig.length) {
-    return null;
-  }
+  // Generate CSS custom properties for the chart
+  const cssVars = React.useMemo(() => {
+    const vars: Record<string, string> = {};
+    colorConfig.forEach(([key, itemConfig]) => {
+      const color = itemConfig.color;
+      if (color) {
+        vars[`--color-${key}`] = color;
+      }
+    });
+    return vars;
+  }, [colorConfig]);
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
-  })
-  .join("\n")}
-}
-`,
-          )
-          .join("\n"),
-      }}
-    />
-  );
+  // For theme support, we use a useEffect to apply theme-specific styles
+  React.useEffect(() => {
+    const chartElement = document.querySelector(`[data-chart="${id}"]`);
+    if (!chartElement) return;
+
+    // Apply CSS custom properties directly to the element
+    colorConfig.forEach(([key, itemConfig]) => {
+      if (itemConfig.theme) {
+        // Determine current theme
+        const isDark = document.documentElement.classList.contains('dark');
+        const themeKey = isDark ? 'dark' : 'light';
+        const color = itemConfig.theme[themeKey as keyof typeof itemConfig.theme];
+        if (color) {
+          (chartElement as HTMLElement).style.setProperty(`--color-${key}`, color);
+        }
+      } else if (itemConfig.color) {
+        (chartElement as HTMLElement).style.setProperty(`--color-${key}`, itemConfig.color);
+      }
+    });
+
+    // Observe theme changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          const isDark = document.documentElement.classList.contains('dark');
+          const themeKey = isDark ? 'dark' : 'light';
+          colorConfig.forEach(([key, itemConfig]) => {
+            if (itemConfig.theme) {
+              const color = itemConfig.theme[themeKey as keyof typeof itemConfig.theme];
+              if (color) {
+                (chartElement as HTMLElement).style.setProperty(`--color-${key}`, color);
+              }
+            }
+          });
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, [id, colorConfig]);
+
+  // Return null since we're applying styles via useEffect
+  return null;
 };
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
