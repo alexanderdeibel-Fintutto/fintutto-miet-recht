@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Home, Plus, Building2, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { unitSchema } from '@/lib/validation';
 
 interface Building {
   id: string;
@@ -60,6 +61,7 @@ export default function Units() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     building_id: '',
@@ -110,16 +112,31 @@ export default function Units() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate with zod
+    const result = unitSchema.safeParse(formData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.errors.forEach(err => {
+        if (err.path[0]) {
+          errors[String(err.path[0])] = err.message;
+        }
+      });
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors({});
     setSaving(true);
+    
     try {
       const unitData = {
-        building_id: formData.building_id,
-        unit_number: formData.unit_number.trim(),
-        floor: formData.floor ? parseInt(formData.floor) : null,
-        area: formData.area ? parseFloat(formData.area) : null,
-        rooms: formData.rooms ? parseFloat(formData.rooms) : null,
-        type: formData.type,
-        status: formData.status,
+        building_id: result.data.building_id,
+        unit_number: result.data.unit_number,
+        floor: result.data.floor,
+        area: result.data.area,
+        rooms: result.data.rooms,
+        type: result.data.type,
+        status: result.data.status,
       };
 
       if (editingUnit) {
@@ -185,6 +202,7 @@ export default function Units() {
       status: 'available',
     });
     setEditingUnit(null);
+    setValidationErrors({});
   };
 
   const handleDialogChange = (open: boolean) => {
@@ -243,7 +261,10 @@ export default function Units() {
                   <Label>Gebäude *</Label>
                   <Select
                     value={formData.building_id}
-                    onValueChange={(value) => setFormData({ ...formData, building_id: value })}
+                    onValueChange={(value) => {
+                      setFormData({ ...formData, building_id: value });
+                      setValidationErrors({ ...validationErrors, building_id: '' });
+                    }}
                     required
                   >
                     <SelectTrigger>
@@ -257,6 +278,9 @@ export default function Units() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {validationErrors.building_id && (
+                    <p className="text-sm text-destructive">{validationErrors.building_id}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -265,19 +289,34 @@ export default function Units() {
                       id="unit_number"
                       placeholder="z.B. 1.OG links"
                       value={formData.unit_number}
-                      onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, unit_number: e.target.value });
+                        setValidationErrors({ ...validationErrors, unit_number: '' });
+                      }}
+                      maxLength={50}
                       required
                     />
+                    {validationErrors.unit_number && (
+                      <p className="text-sm text-destructive">{validationErrors.unit_number}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="floor">Etage</Label>
                     <Input
                       id="floor"
                       type="number"
+                      min="-10"
+                      max="200"
                       placeholder="1"
                       value={formData.floor}
-                      onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, floor: e.target.value });
+                        setValidationErrors({ ...validationErrors, floor: '' });
+                      }}
                     />
+                    {validationErrors.floor && (
+                      <p className="text-sm text-destructive">{validationErrors.floor}</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -287,10 +326,18 @@ export default function Units() {
                       id="area"
                       type="number"
                       step="0.01"
+                      min="0"
+                      max="10000"
                       placeholder="75"
                       value={formData.area}
-                      onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, area: e.target.value });
+                        setValidationErrors({ ...validationErrors, area: '' });
+                      }}
                     />
+                    {validationErrors.area && (
+                      <p className="text-sm text-destructive">{validationErrors.area}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="rooms">Zimmer</Label>
@@ -298,10 +345,18 @@ export default function Units() {
                       id="rooms"
                       type="number"
                       step="0.5"
+                      min="0"
+                      max="50"
                       placeholder="3"
                       value={formData.rooms}
-                      onChange={(e) => setFormData({ ...formData, rooms: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, rooms: e.target.value });
+                        setValidationErrors({ ...validationErrors, rooms: '' });
+                      }}
                     />
+                    {validationErrors.rooms && (
+                      <p className="text-sm text-destructive">{validationErrors.rooms}</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

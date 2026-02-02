@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Building2, Plus, MapPin, Home, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { buildingSchema } from '@/lib/validation';
 
 interface Building {
   id: string;
@@ -33,6 +34,7 @@ export default function Buildings() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Form state
   const [formData, setFormData] = useState({
@@ -75,16 +77,31 @@ export default function Buildings() {
     e.preventDefault();
     if (!profile?.organization_id) return;
 
+    // Validate with zod
+    const result = buildingSchema.safeParse(formData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.errors.forEach(err => {
+        if (err.path[0]) {
+          errors[String(err.path[0])] = err.message;
+        }
+      });
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors({});
     setSaving(true);
+    
     try {
       const buildingData = {
         organization_id: profile.organization_id,
-        name: formData.name.trim(),
-        address: formData.address.trim() || null,
-        city: formData.city.trim() || null,
-        postal_code: formData.postal_code.trim() || null,
-        total_area: formData.total_area ? parseFloat(formData.total_area) : null,
-        year_built: formData.year_built ? parseInt(formData.year_built) : null,
+        name: result.data.name,
+        address: result.data.address,
+        city: result.data.city,
+        postal_code: result.data.postal_code,
+        total_area: result.data.total_area,
+        year_built: result.data.year_built,
       };
 
       if (editingBuilding) {
@@ -152,6 +169,7 @@ export default function Buildings() {
       year_built: '',
     });
     setEditingBuilding(null);
+    setValidationErrors({});
   };
 
   const handleDialogChange = (open: boolean) => {
@@ -212,9 +230,16 @@ export default function Buildings() {
                     id="name"
                     placeholder="z.B. Mehrfamilienhaus Hauptstraße"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      setValidationErrors({ ...validationErrors, name: '' });
+                    }}
+                    maxLength={100}
                     required
                   />
+                  {validationErrors.name && (
+                    <p className="text-sm text-destructive">{validationErrors.name}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="address">Adresse</Label>
@@ -223,7 +248,11 @@ export default function Buildings() {
                     placeholder="Straße und Hausnummer"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    maxLength={200}
                   />
+                  {validationErrors.address && (
+                    <p className="text-sm text-destructive">{validationErrors.address}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -232,8 +261,15 @@ export default function Buildings() {
                       id="postal_code"
                       placeholder="12345"
                       value={formData.postal_code}
-                      onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, postal_code: e.target.value });
+                        setValidationErrors({ ...validationErrors, postal_code: '' });
+                      }}
+                      maxLength={10}
                     />
+                    {validationErrors.postal_code && (
+                      <p className="text-sm text-destructive">{validationErrors.postal_code}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="city">Stadt</Label>
@@ -242,7 +278,11 @@ export default function Buildings() {
                       placeholder="Berlin"
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      maxLength={100}
                     />
+                    {validationErrors.city && (
+                      <p className="text-sm text-destructive">{validationErrors.city}</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -252,20 +292,36 @@ export default function Buildings() {
                       id="total_area"
                       type="number"
                       step="0.01"
+                      min="0"
+                      max="100000"
                       placeholder="500"
                       value={formData.total_area}
-                      onChange={(e) => setFormData({ ...formData, total_area: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, total_area: e.target.value });
+                        setValidationErrors({ ...validationErrors, total_area: '' });
+                      }}
                     />
+                    {validationErrors.total_area && (
+                      <p className="text-sm text-destructive">{validationErrors.total_area}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="year_built">Baujahr</Label>
                     <Input
                       id="year_built"
                       type="number"
+                      min="1800"
+                      max={new Date().getFullYear() + 5}
                       placeholder="1990"
                       value={formData.year_built}
-                      onChange={(e) => setFormData({ ...formData, year_built: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, year_built: e.target.value });
+                        setValidationErrors({ ...validationErrors, year_built: '' });
+                      }}
                     />
+                    {validationErrors.year_built && (
+                      <p className="text-sm text-destructive">{validationErrors.year_built}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">

@@ -641,6 +641,7 @@ export type Database = {
         Args: { _building_id: string; _user_id: string }
         Returns: boolean
       }
+      user_has_organization: { Args: { _user_id: string }; Returns: boolean }
       user_has_unit_access: {
         Args: { _unit_id: string; _user_id: string }
         Returns: boolean
