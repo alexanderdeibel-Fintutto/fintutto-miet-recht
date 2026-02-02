@@ -2,17 +2,14 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
-const ALLOWED_ORIGINS = [
-  'https://fintutto-miet-recht.lovable.app',
-  'https://id-preview--06df37ad-0e51-4bbb-bb0a-d92420901e28.lovable.app',
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
+// Production-only origin by default; override via ALLOWED_ORIGINS secret for dev/preview
+const DEFAULT_ORIGIN = 'https://fintutto-miet-recht.lovable.app';
+const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGINS')?.split(',').map(o => o.trim()) || [DEFAULT_ORIGIN];
 
 const getCorsHeaders = (origin: string | null) => {
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin || '') ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigin = (origin && ALLOWED_ORIGINS.includes(origin)) ? origin : DEFAULT_ORIGIN;
   return {
-    "Access-Control-Allow-Origin": allowedOrigin!,
+    "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   };
 };
