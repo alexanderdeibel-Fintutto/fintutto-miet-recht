@@ -125,6 +125,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bundle_form_templates_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "v_bundles_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bundle_form_templates_form_template_id_fkey"
             columns: ["form_template_id"]
             isOneToOne: false
@@ -293,6 +300,13 @@ export type Database = {
             columns: ["bundle_id"]
             isOneToOne: false
             referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_purchases_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "v_bundles_public"
             referencedColumns: ["id"]
           },
           {
@@ -995,6 +1009,75 @@ export type Database = {
       }
     }
     Views: {
+      v_ai_usage_user: {
+        Row: {
+          action: string | null
+          app_id: string | null
+          created_at: string | null
+          form_slug: string | null
+          id: string | null
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          app_id?: string | null
+          created_at?: string | null
+          form_slug?: string | null
+          id?: string | null
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          app_id?: string | null
+          created_at?: string | null
+          form_slug?: string | null
+          id?: string | null
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      v_bundles_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          price_cents: number | null
+          slug: string | null
+          thumbnail_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          price_cents?: number | null
+          slug?: string | null
+          thumbnail_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          price_cents?: number | null
+          slug?: string | null
+          thumbnail_url?: string | null
+        }
+        Relationships: []
+      }
       v_user_available_forms: {
         Row: {
           form_template_id: string | null

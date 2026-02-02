@@ -1,8 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Tables } from '@/integrations/supabase/types';
 
-export type Bundle = Tables<'bundles'>;
+// Public bundle type (without stripe_price_id for security)
+export interface Bundle {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  thumbnail_url: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+}
 
 export interface BundleWithForms extends Bundle {
   forms: Array<{
@@ -23,10 +32,10 @@ export function useBundles() {
   return useQuery({
     queryKey: ['bundles'],
     queryFn: async () => {
+      // Use public view to avoid exposing stripe_price_id
       const { data: bundles, error: bundlesError } = await supabase
-        .from('bundles')
+        .from('v_bundles_public')
         .select('*')
-        .eq('is_active', true)
         .order('price_cents', { ascending: true });
 
       if (bundlesError) throw bundlesError;
@@ -76,11 +85,11 @@ export function useBundle(slug: string) {
   return useQuery({
     queryKey: ['bundle', slug],
     queryFn: async () => {
+      // Use public view to avoid exposing stripe_price_id
       const { data: bundle, error: bundleError } = await supabase
-        .from('bundles')
+        .from('v_bundles_public')
         .select('*')
         .eq('slug', slug)
-        .eq('is_active', true)
         .single();
 
       if (bundleError) throw bundleError;
