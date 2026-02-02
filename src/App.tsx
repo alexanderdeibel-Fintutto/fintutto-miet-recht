@@ -14,6 +14,8 @@ import Formulare from "./pages/Formulare";
 import Rechner from "./pages/Rechner";
 import Dokumente from "./pages/Dokumente";
 import Profil from "./pages/Profil";
+import Pricing from "./pages/Pricing";
+import Success from "./pages/Success";
 import NotFound from "./pages/NotFound";
 
 // Property Management Pages
@@ -48,6 +50,8 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/success" element={<Success />} />
 
             {/* Organization Setup */}
             <Route
