@@ -66,7 +66,6 @@ export default function Buildings() {
       if (error) throw error;
       setBuildings(data || []);
     } catch (error) {
-      console.error('Error fetching buildings:', error);
       toast.error('Fehler beim Laden der Gebäude');
     } finally {
       setLoading(false);
@@ -123,7 +122,6 @@ export default function Buildings() {
       resetForm();
       fetchBuildings();
     } catch (error: any) {
-      console.error('Error saving building:', error);
       toast.error('Fehler beim Speichern');
     } finally {
       setSaving(false);
@@ -154,7 +152,6 @@ export default function Buildings() {
       toast.success('Gebäude gelöscht');
       fetchBuildings();
     } catch (error) {
-      console.error('Error deleting building:', error);
       toast.error('Fehler beim Löschen');
     }
   };

@@ -102,7 +102,6 @@ export default function Units() {
       setUnits(unitsRes.data || []);
       setBuildings(buildingsRes.data || []);
     } catch (error) {
-      console.error('Error fetching data:', error);
       toast.error('Fehler beim Laden der Daten');
     } finally {
       setLoading(false);
@@ -156,7 +155,6 @@ export default function Units() {
       resetForm();
       fetchData();
     } catch (error: any) {
-      console.error('Error saving unit:', error);
       toast.error('Fehler beim Speichern');
     } finally {
       setSaving(false);
@@ -186,7 +184,6 @@ export default function Units() {
       toast.success('Einheit gelöscht');
       fetchData();
     } catch (error) {
-      console.error('Error deleting unit:', error);
       toast.error('Fehler beim Löschen');
     }
   };

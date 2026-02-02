@@ -42,7 +42,6 @@ export default function Profil() {
         window.open(data.url, '_blank');
       }
     } catch (err) {
-      console.error('Portal error:', err);
       toast.error('Fehler beim Öffnen des Kundenportals');
     } finally {
       setLoadingPortal(false);
@@ -73,7 +72,6 @@ export default function Profil() {
         window.location.href = data.url;
       }
     } catch (err) {
-      console.error('Checkout error:', err);
       toast.error('Fehler beim Erstellen der Checkout-Session');
     } finally {
       setLoadingCheckout(false);
