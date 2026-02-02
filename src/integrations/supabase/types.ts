@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_log: {
+        Row: {
+          action: string
+          app_id: string | null
+          cost_cents: number | null
+          created_at: string | null
+          form_slug: string | null
+          id: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          app_id?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          form_slug?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          app_id?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          form_slug?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       buildings: {
         Row: {
           address: string | null
@@ -798,6 +837,50 @@ export type Database = {
             columns: ["building_id"]
             isOneToOne: false
             referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_form_designs: {
+        Row: {
+          created_at: string | null
+          design_config: Json
+          id: string
+          is_default: boolean | null
+          name: string
+          org_id: string | null
+          shared_with_org: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          design_config?: Json
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          org_id?: string | null
+          shared_with_org?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          design_config?: Json
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          org_id?: string | null
+          shared_with_org?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_form_designs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
