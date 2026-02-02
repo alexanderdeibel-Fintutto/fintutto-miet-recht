@@ -8,7 +8,6 @@ type SubscriptionTier = Database['public']['Enums']['subscription_tier'];
 interface Profile {
   id: string;
   user_id: string;
-  email: string | null;
   full_name: string | null;
   subscription_tier: SubscriptionTier;
   organization_id: string | null;
