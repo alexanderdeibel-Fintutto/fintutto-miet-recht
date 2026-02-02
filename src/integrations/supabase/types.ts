@@ -142,6 +142,13 @@ export type Database = {
             foreignKeyName: "bundle_form_templates_form_template_id_fkey"
             columns: ["form_template_id"]
             isOneToOne: false
+            referencedRelation: "v_form_templates_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_form_templates_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
             referencedRelation: "v_user_available_forms"
             referencedColumns: ["form_template_id"]
           },
@@ -320,6 +327,13 @@ export type Database = {
             foreignKeyName: "form_purchases_form_template_id_fkey"
             columns: ["form_template_id"]
             isOneToOne: false
+            referencedRelation: "v_form_templates_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_purchases_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
             referencedRelation: "v_user_available_forms"
             referencedColumns: ["form_template_id"]
           },
@@ -431,6 +445,13 @@ export type Database = {
             columns: ["form_template_id"]
             isOneToOne: false
             referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "v_form_templates_public"
             referencedColumns: ["id"]
           },
           {
@@ -933,6 +954,13 @@ export type Database = {
             foreignKeyName: "user_form_drafts_form_template_id_fkey"
             columns: ["form_template_id"]
             isOneToOne: false
+            referencedRelation: "v_form_templates_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_form_drafts_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
             referencedRelation: "v_user_available_forms"
             referencedColumns: ["form_template_id"]
           },
@@ -1072,6 +1100,60 @@ export type Database = {
           price_cents?: number | null
           slug?: string | null
           thumbnail_url?: string | null
+        }
+        Relationships: []
+      }
+      v_form_templates_public: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          persona: string | null
+          price_cents: number | null
+          seo_description: string | null
+          seo_keywords: string[] | null
+          seo_title: string | null
+          slug: string | null
+          sort_order: number | null
+          thumbnail_url: string | null
+          tier: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          persona?: string | null
+          price_cents?: number | null
+          seo_description?: string | null
+          seo_keywords?: string[] | null
+          seo_title?: string | null
+          slug?: string | null
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          tier?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          persona?: string | null
+          price_cents?: number | null
+          seo_description?: string | null
+          seo_keywords?: string[] | null
+          seo_title?: string | null
+          slug?: string | null
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          tier?: string | null
         }
         Relationships: []
       }
