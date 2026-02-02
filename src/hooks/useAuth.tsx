@@ -11,6 +11,8 @@ interface Profile {
   email: string | null;
   full_name: string | null;
   subscription_tier: SubscriptionTier;
+  organization_id: string | null;
+  avatar_url: string | null;
 }
 
 interface AuthContextType {
