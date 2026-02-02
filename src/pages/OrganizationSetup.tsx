@@ -43,17 +43,8 @@ export default function OrganizationSetup() {
 
       if (profileError) throw profileError;
 
-      // Add vermieter role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: user.id,
-          role: 'vermieter' as const,
-        });
-
-      if (roleError && !roleError.message.includes('duplicate')) {
-        console.error('Role error:', roleError);
-      }
+      // Role assignment is handled automatically by database trigger
+      // when organization_id is set on profile
 
       await refreshProfile();
       toast.success('Organisation erfolgreich erstellt!');
