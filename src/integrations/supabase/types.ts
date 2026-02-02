@@ -64,6 +64,79 @@ export type Database = {
           },
         ]
       }
+      bundle_form_templates: {
+        Row: {
+          bundle_id: string
+          form_template_id: string
+        }
+        Insert: {
+          bundle_id: string
+          form_template_id: string
+        }
+        Update: {
+          bundle_id?: string
+          form_template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_form_templates_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_form_templates_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_form_templates_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_available_forms"
+            referencedColumns: ["form_template_id"]
+          },
+        ]
+      }
+      bundles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price_cents: number
+          slug: string
+          stripe_price_id: string | null
+          thumbnail_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price_cents?: number
+          slug: string
+          stripe_price_id?: string | null
+          thumbnail_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_cents?: number
+          slug?: string
+          stripe_price_id?: string | null
+          thumbnail_url?: string | null
+        }
+        Relationships: []
+      }
       calculations: {
         Row: {
           created_at: string
@@ -141,6 +214,178 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_purchases: {
+        Row: {
+          amount_cents: number
+          bundle_id: string | null
+          form_template_id: string | null
+          id: string
+          purchased_at: string | null
+          status: string | null
+          stripe_payment_intent: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          bundle_id?: string | null
+          form_template_id?: string | null
+          id?: string
+          purchased_at?: string | null
+          status?: string | null
+          stripe_payment_intent?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          bundle_id?: string | null
+          form_template_id?: string | null
+          id?: string
+          purchased_at?: string | null
+          status?: string | null
+          stripe_payment_intent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_purchases_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_purchases_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_purchases_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_available_forms"
+            referencedColumns: ["form_template_id"]
+          },
+        ]
+      }
+      form_templates: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          fields: Json
+          id: string
+          is_active: boolean | null
+          name: string
+          persona: string
+          price_cents: number
+          seo_description: string | null
+          seo_keywords: string[] | null
+          seo_title: string | null
+          slug: string
+          sort_order: number | null
+          stripe_price_id: string | null
+          template_content: string | null
+          thumbnail_url: string | null
+          tier: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean | null
+          name: string
+          persona?: string
+          price_cents?: number
+          seo_description?: string | null
+          seo_keywords?: string[] | null
+          seo_title?: string | null
+          slug: string
+          sort_order?: number | null
+          stripe_price_id?: string | null
+          template_content?: string | null
+          thumbnail_url?: string | null
+          tier?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          persona?: string
+          price_cents?: number
+          seo_description?: string | null
+          seo_keywords?: string[] | null
+          seo_title?: string | null
+          slug?: string
+          sort_order?: number | null
+          stripe_price_id?: string | null
+          template_content?: string | null
+          thumbnail_url?: string | null
+          tier?: string
+        }
+        Relationships: []
+      }
+      generated_documents: {
+        Row: {
+          created_at: string | null
+          form_slug: string
+          form_template_id: string | null
+          id: string
+          input_data: Json
+          pdf_url: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          form_slug: string
+          form_template_id?: string | null
+          id?: string
+          input_data?: Json
+          pdf_url?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          form_slug?: string
+          form_template_id?: string | null
+          id?: string
+          input_data?: Json
+          pdf_url?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_documents_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_available_forms"
+            referencedColumns: ["form_template_id"]
           },
         ]
       }
@@ -411,6 +656,7 @@ export type Database = {
           full_name: string | null
           id: string
           organization_id: string | null
+          persona: string | null
           subscription_tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
           user_id: string
@@ -422,6 +668,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           organization_id?: string | null
+          persona?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
           user_id: string
@@ -433,6 +680,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           organization_id?: string | null
+          persona?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
           user_id?: string
@@ -554,6 +802,48 @@ export type Database = {
           },
         ]
       }
+      user_form_drafts: {
+        Row: {
+          current_step: number | null
+          draft_data: Json
+          form_template_id: string
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          current_step?: number | null
+          draft_data?: Json
+          form_template_id: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          current_step?: number | null
+          draft_data?: Json
+          form_template_id?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_form_drafts_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_form_drafts_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_available_forms"
+            referencedColumns: ["form_template_id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -622,7 +912,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_user_available_forms: {
+        Row: {
+          form_template_id: string | null
+          has_access: boolean | null
+          name: string | null
+          price_cents: number | null
+          slug: string | null
+          tier: string | null
+          user_id: string | null
+        }
+        Insert: {
+          form_template_id?: string | null
+          has_access?: never
+          name?: string | null
+          price_cents?: number | null
+          slug?: string | null
+          tier?: string | null
+          user_id?: never
+        }
+        Update: {
+          form_template_id?: string | null
+          has_access?: never
+          name?: string | null
+          price_cents?: number | null
+          slug?: string | null
+          tier?: string | null
+          user_id?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       count_user_documents: { Args: { _user_id: string }; Returns: number }
@@ -639,6 +958,10 @@ export type Database = {
       }
       user_has_building_access: {
         Args: { _building_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_has_form_access: {
+        Args: { _form_template_id: string; _user_id: string }
         Returns: boolean
       }
       user_has_organization: { Args: { _user_id: string }; Returns: boolean }
