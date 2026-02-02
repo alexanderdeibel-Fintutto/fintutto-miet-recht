@@ -4,6 +4,25 @@ import type { Tables } from '@/integrations/supabase/types';
 
 export type FormTemplate = Tables<'form_templates'>;
 
+// Public form template type (without sensitive fields like stripe_price_id, fields)
+export interface PublicFormTemplate {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  category: string;
+  persona: string;
+  tier: string;
+  price_cents: number;
+  thumbnail_url: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_keywords: string[] | null;
+  sort_order: number | null;
+  is_active: boolean | null;
+  created_at: string | null;
+}
+
 export interface UseFormTemplatesOptions {
   persona?: string;
   category?: string;
@@ -19,10 +38,10 @@ export function useFormTemplates(options: UseFormTemplatesOptions = {}) {
   return useQuery({
     queryKey: ['form-templates', { persona, category, tier, search, sortBy, limit }],
     queryFn: async () => {
+      // Use the secure public view that excludes stripe_price_id and fields
       let query = supabase
-        .from('form_templates')
-        .select('*')
-        .eq('is_active', true);
+        .from('v_form_templates_public')
+        .select('*');
 
       // Apply filters
       if (persona && persona !== 'alle') {
@@ -62,7 +81,7 @@ export function useFormTemplates(options: UseFormTemplatesOptions = {}) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as FormTemplate[];
+      return data as PublicFormTemplate[];
     },
   });
 }

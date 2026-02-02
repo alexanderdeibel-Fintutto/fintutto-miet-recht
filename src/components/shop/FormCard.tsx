@@ -4,10 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { FileText } from 'lucide-react';
 import { formatPrice, FORM_TIERS, FORM_CATEGORIES } from '@/lib/formConstants';
 import { cn } from '@/lib/utils';
-import type { FormTemplate } from '@/hooks/useFormTemplates';
+import type { PublicFormTemplate } from '@/hooks/useFormTemplates';
 
 interface FormCardProps {
-  form: FormTemplate;
+  form: PublicFormTemplate;
   className?: string;
 }
 
