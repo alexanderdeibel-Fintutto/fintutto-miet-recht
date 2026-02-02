@@ -1,13 +1,13 @@
-// Stripe Price IDs
+// Stripe Price IDs - Formulare App
 export const STRIPE_PRICES = {
   basic: {
-    monthly: 'price_1Sv6Yt52lqSgjCzeAYx575tX',
-    yearly: 'price_1Sv6Yt52lqSgjCzeomYEvfER',
+    monthly: 'price_1St4fk52lqSgjCzeAqp6QBYD',
+    yearly: 'price_1St4fk52lqSgjCzeAqp6QBYD', // TODO: Add yearly price when available
     productId: 'prod_TssJeyMxgaddNx',
   },
   pro: {
-    monthly: 'price_1Sv6Yu52lqSgjCzeyxqOwVDY',
-    yearly: 'price_1Sv6Yu52lqSgjCzeF2OJ0B6q',
+    monthly: 'price_1St4gG52lqSgjCzeOiHLvvXl',
+    yearly: 'price_1St4gG52lqSgjCzeOiHLvvXl', // TODO: Add yearly price when available
     productId: 'prod_TssJgIeaLhjZLD',
   },
 } as const;
