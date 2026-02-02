@@ -6,17 +6,25 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
-// Pages
-import Landing from "./pages/Landing";
+// Shop Pages
+import ShopLanding from "./pages/shop/ShopLanding";
+import CategoryPage from "./pages/shop/CategoryPage";
+import FormDetailPage from "./pages/shop/FormDetailPage";
+import BundleDetailPage from "./pages/shop/BundleDetailPage";
+import MyForms from "./pages/shop/MyForms";
+
+// Auth Pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Pricing from "./pages/Pricing";
+import Success from "./pages/Success";
+import NotFound from "./pages/NotFound";
+
+// Dashboard Pages
 import Formulare from "./pages/Formulare";
 import Rechner from "./pages/Rechner";
 import Dokumente from "./pages/Dokumente";
 import Profil from "./pages/Profil";
-import Pricing from "./pages/Pricing";
-import Success from "./pages/Success";
-import NotFound from "./pages/NotFound";
 
 // Property Management Pages
 import OrganizationSetup from "./pages/OrganizationSetup";
@@ -46,8 +54,15 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Landing />} />
+            {/* Shop Routes */}
+            <Route path="/" element={<ShopLanding />} />
+            <Route path="/vermieter" element={<CategoryPage />} />
+            <Route path="/mieter" element={<CategoryPage />} />
+            <Route path="/formulare/:slug" element={<FormDetailPage />} />
+            <Route path="/bundles/:slug" element={<BundleDetailPage />} />
+            <Route path="/meine-formulare" element={<MyForms />} />
+
+            {/* Auth Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/pricing" element={<Pricing />} />

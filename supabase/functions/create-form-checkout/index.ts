@@ -1,0 +1,111 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+
+const DEFAULT_ORIGIN = 'https://fintutto-miet-recht.lovable.app';
+const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGINS')?.split(',').map(o => o.trim()) || [DEFAULT_ORIGIN];
+
+const getCorsHeaders = (origin: string | null): Record<string, string> => {
+  const allowedOrigin = (origin && ALLOWED_ORIGINS.includes(origin)) ? origin : DEFAULT_ORIGIN;
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+};
+
+serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // Create Supabase client
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  );
+
+  try {
+    // Get the authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("No authorization header");
+    }
+
+    // Verify the user
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+
+    if (authError || !user?.email) {
+      throw new Error("User not authenticated or email not available");
+    }
+
+    // Get the form template ID from the request body
+    const { formTemplateId } = await req.json();
+
+    if (!formTemplateId) {
+      throw new Error("formTemplateId is required");
+    }
+
+    // Fetch the form template to get price info
+    const { data: template, error: templateError } = await supabaseClient
+      .from('form_templates')
+      .select('id, name, slug, price_cents, stripe_price_id')
+      .eq('id', formTemplateId)
+      .single();
+
+    if (templateError || !template) {
+      throw new Error("Form template not found");
+    }
+
+    if (!template.stripe_price_id) {
+      throw new Error("This form template is not available for purchase");
+    }
+
+    // Initialize Stripe
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-08-27.basil",
+    });
+
+    // Check if a Stripe customer already exists
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    let customerId: string | undefined;
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+    }
+
+    // Create one-time payment session
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      customer_email: customerId ? undefined : user.email,
+      line_items: [
+        {
+          price: template.stripe_price_id,
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `${origin || DEFAULT_ORIGIN}/formulare/${template.slug}?success=true`,
+      cancel_url: `${origin || DEFAULT_ORIGIN}/formulare/${template.slug}`,
+      metadata: {
+        form_template_id: formTemplateId,
+        user_id: user.id,
+        type: 'form_purchase',
+      },
+    });
+
+    return new Response(JSON.stringify({ url: session.url }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});
