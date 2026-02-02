@@ -1,684 +1,361 @@
 
+# Vollständige Implementierung: Formular-Shop-System
 
-# Vollstandiger Implementierungsplan: Formulare Shop
+## Zusammenfassung
 
-## Status: Phase 1 ✅ abgeschlossen
-
----
-
-## Ubersicht
-
-Dieses Projekt transformiert die bestehende Formulare-App in einen vollwertigen E-Commerce-Shop fur Mietrecht-Dokumente mit dynamischen Formular-Wizards, Einzelkauf-Optionen, Bundles und einem optimierten Onboarding-Flow.
-
----
-
-## Phase 1: Datenbank-Schema
-
-### 1.1 Neue Tabellen erstellen
-
-```text
-+---------------------------+
-|      form_templates       |
-+---------------------------+
-| id (UUID, PK)             |
-| slug (TEXT, UNIQUE)       |
-| name (TEXT)               |
-| description (TEXT)        |
-| category (TEXT)           |
-| persona (TEXT)            |  -- 'vermieter' | 'mieter' | 'beide'
-| price_cents (INTEGER)     |
-| stripe_price_id (TEXT)    |
-| tier (TEXT)               |  -- 'free' | 'basic' | 'premium'
-| fields (JSONB)            |  -- Wizard-Feld-Definitionen
-| template_content (TEXT)   |  -- PDF-Template
-| thumbnail_url (TEXT)      |
-| sort_order (INTEGER)      |
-| is_active (BOOLEAN)       |
-| seo_title (TEXT)          |
-| seo_description (TEXT)    |
-| seo_keywords (TEXT[])     |
-| created_at (TIMESTAMPTZ)  |
-+---------------------------+
-
-+---------------------------+
-|         bundles           |
-+---------------------------+
-| id (UUID, PK)             |
-| slug (TEXT, UNIQUE)       |
-| name (TEXT)               |
-| description (TEXT)        |
-| price_cents (INTEGER)     |
-| stripe_price_id (TEXT)    |
-| thumbnail_url (TEXT)      |
-| is_active (BOOLEAN)       |
-| created_at (TIMESTAMPTZ)  |
-+---------------------------+
-
-+---------------------------+
-|   bundle_form_templates   |
-+---------------------------+
-| bundle_id (UUID, FK)      |
-| form_template_id (UUID,FK)|
-+---------------------------+
-
-+---------------------------+
-|      form_purchases       |
-+---------------------------+
-| id (UUID, PK)             |
-| user_id (UUID, FK)        |
-| form_template_id (UUID)   |  -- NULL wenn Bundle
-| bundle_id (UUID)          |  -- NULL wenn Einzelkauf
-| stripe_payment_intent (T) |
-| amount_cents (INTEGER)    |
-| status (TEXT)             |
-| purchased_at (TIMESTAMPTZ)|
-+---------------------------+
-
-+---------------------------+
-|   generated_documents     |
-+---------------------------+
-| id (UUID, PK)             |
-| user_id (UUID, FK)        |
-| form_template_id (UUID,FK)|
-| form_slug (TEXT)          |
-| title (TEXT)              |
-| input_data (JSONB)        |
-| pdf_url (TEXT)            |
-| status (TEXT)             |  -- 'draft' | 'generated'
-| created_at (TIMESTAMPTZ)  |
-| updated_at (TIMESTAMPTZ)  |
-+---------------------------+
-
-+---------------------------+
-|    user_form_drafts       |
-+---------------------------+
-| id (UUID, PK)             |
-| user_id (UUID, FK)        |
-| form_template_id (UUID,FK)|
-| draft_data (JSONB)        |
-| current_step (INTEGER)    |
-| updated_at (TIMESTAMPTZ)  |
-+---------------------------+
-```
-
-### 1.2 Datenbank-View
-
-```sql
-CREATE VIEW v_user_available_forms AS
-SELECT 
-  u.id as user_id,
-  ft.id as form_template_id,
-  ft.slug,
-  CASE
-    WHEN ft.tier = 'free' THEN true
-    WHEN fp.id IS NOT NULL THEN true
-    WHEN us.plan_id IN ('basic', 'pro') THEN true
-    ELSE false
-  END as has_access
-FROM auth.users u
-CROSS JOIN form_templates ft
-LEFT JOIN form_purchases fp ON fp.user_id = u.id 
-  AND (fp.form_template_id = ft.id 
-       OR fp.bundle_id IN (SELECT bundle_id FROM bundle_form_templates WHERE form_template_id = ft.id))
-LEFT JOIN user_subscriptions us ON us.user_id = u.id AND us.app_id = 'formulare';
-```
-
-### 1.3 RLS Policies
-- Users konnen eigene Purchases, Drafts und Generated Documents sehen
-- form_templates und bundles sind offentlich lesbar
-- Schreibzugriff auf form_purchases nur uber Service Role (Webhooks)
+Transformation der bestehenden Formulare-App zu einem vollwertigen Shop-System mit:
+- Neue Landing Page mit Hero-Suche, Persona-Tabs und Formular-Grid
+- Dynamische Formular-Seiten mit mehrstufigem Wizard
+- Bundle-System mit Preisvergleich
+- "Meine Formulare" Bereich mit Gekauft/Entwürfe/Erstellt Tabs
+- Stripe-Integration für Einmalzahlungen
 
 ---
 
-## Phase 2: Edge Functions
+## Phase 1: Neue Seitenstruktur und Routing
 
-### 2.1 `create-form-checkout` (Einzelkauf)
+### 1.1 App.tsx Routing erweitern
 
-```text
-Input: { formTemplateId, successUrl, cancelUrl }
-
-Flow:
-1. User authentifizieren
-2. Preis aus form_templates laden
-3. Stripe Checkout Session erstellen (mode: "payment")
-4. Metadata: { form_template_id, user_id }
-5. URL zuruckgeben
-```
-
-### 2.2 `create-bundle-checkout` (Bundle-Kauf)
+Neue Routes hinzufügen:
 
 ```text
-Input: { bundleId, successUrl, cancelUrl }
-
-Flow:
-1. User authentifizieren
-2. Bundle + Preis laden
-3. Stripe Checkout Session erstellen (mode: "payment")
-4. Metadata: { bundle_id, user_id }
-5. URL zuruckgeben
+/                         -> Neue Shop Landing Page
+/vermieter                -> Kategorie-Seite Vermieter
+/mieter                   -> Kategorie-Seite Mieter
+/formulare/[slug]         -> Dynamische Formular-Detail-Seite
+/bundles/[slug]           -> Bundle-Detail-Seite
+/meine-formulare          -> Benutzer-Dokumente (Gekauft/Entwürfe/Erstellt)
 ```
 
-### 2.3 `stripe-webhook` (erweitern)
+### 1.2 Neue Seiten erstellen
 
-```text
-Neue Events:
-- checkout.session.completed (mode: payment)
-  -> form_purchases INSERT
-  -> E-Mail-Bestatigung (optional)
-
-Prufung:
-- Wenn metadata.form_template_id: Einzelkauf
-- Wenn metadata.bundle_id: Bundle-Kauf
-```
-
-### 2.4 `generate-pdf` (neues Feature)
-
-```text
-Input: { formTemplateId, inputData }
-
-Flow:
-1. Template laden
-2. Daten in Template einfugen
-3. PDF generieren (via Lovable AI oder externer Service)
-4. In Storage hochladen
-5. URL zuruckgeben
-```
+| Datei | Beschreibung |
+|-------|--------------|
+| `src/pages/shop/ShopLanding.tsx` | Hero, Suche, Tabs, Grid |
+| `src/pages/shop/CategoryPage.tsx` | Filter, Sortierung, Grid |
+| `src/pages/shop/FormDetailPage.tsx` | Wizard + Preview |
+| `src/pages/shop/BundleDetailPage.tsx` | Bundle-Infos + CTA |
+| `src/pages/shop/MyForms.tsx` | Tabs: Gekauft/Entwürfe/Erstellt |
 
 ---
 
-## Phase 3: Frontend - Seiten
+## Phase 2: Komponenten-Bibliothek
 
-### 3.1 Landing Page (/) - Redesign
-
+### 2.1 FormCard Komponente
 ```text
-+--------------------------------------------------+
-|  [Logo]                    [Anmelden] [Starten]  |
-+--------------------------------------------------+
-|                                                  |
-|        Mietrecht-Formulare in Minuten            |
-|                                                  |
-|   [__________________] [Suchen]                  |
-|                                                  |
-|   [Vermieter] [Mieter] [Alle]                   |
-|                                                  |
-+--------------------------------------------------+
-|        Beliebte Formulare                        |
-|                                                  |
-|   +------+  +------+  +------+                  |
-|   |Card 1|  |Card 2|  |Card 3|                  |
-|   +------+  +------+  +------+                  |
-|   +------+  +------+  +------+                  |
-|   |Card 4|  |Card 5|  |Card 6|                  |
-|   +------+  +------+  +------+                  |
-|                                                  |
-|           [Alle Formulare ansehen]               |
-+--------------------------------------------------+
-|        Bundles - Mehr sparen                     |
-|                                                  |
-|   +------------+  +------------+                 |
-|   |Vermieter   |  |Mieter      |                |
-|   |Starter-Kit |  |Schutz-Paket|                |
-|   |  ab 29 EUR |  |  ab 19 EUR |                |
-|   +------------+  +------------+                 |
-+--------------------------------------------------+
-|        Testimonials (Slider)                     |
-+--------------------------------------------------+
-|        FAQ (Accordion)                           |
-+--------------------------------------------------+
-|        Footer                                    |
-+--------------------------------------------------+
+src/components/shop/FormCard.tsx
+- Thumbnail, Name, Preis-Badge
+- Tier-Tag (FREE/BASIC/PREMIUM)
+- Kategorie-Anzeige
+- Hover-Effekt mit Kurzbeschreibung
 ```
 
-### 3.2 Kategorie-Seiten (/vermieter, /mieter)
-
+### 2.2 BundleCard Komponente
 ```text
-Route: /vermieter oder /mieter
-
-+--------------------------------------------------+
-|  Breadcrumb: Home > Vermieter                    |
-+--------------------------------------------------+
-|  Filter: [Alle] [Vertrage] [Schreiben] [Proto.] |
-|  Sortierung: [Beliebt v] [Preis] [A-Z]          |
-+--------------------------------------------------+
-|                                                  |
-|   +------+  +------+  +------+  +------+        |
-|   |Form  |  |Form  |  |Form  |  |Form  |        |
-|   |Card  |  |Card  |  |Card  |  |Card  |        |
-|   |4,99  |  |GRATIS|  |9,99  |  |4,99  |        |
-|   +------+  +------+  +------+  +------+        |
-|                                                  |
-|   [Pagination]                                   |
-+--------------------------------------------------+
-```
-
-### 3.3 Formular-Seite (/formulare/[slug])
-
-```text
-Route: /formulare/:slug (dynamisch)
-
-Desktop Layout:
-+--------------------------------------------------+
-|  [Back]  Mietvertrag erstellen                   |
-+--------------------------------------------------+
-|                           |                      |
-|   FormWizard              |   FormPreview        |
-|   +------------------+    |   +-------------+    |
-|   | Schritt 1 von 5  |    |   | Live-       |    |
-|   |                  |    |   | Vorschau    |    |
-|   | [Feld 1]         |    |   |             |    |
-|   | [Feld 2]         |    |   |             |    |
-|   | [Feld 3]         |    |   |             |    |
-|   |                  |    |   |             |    |
-|   | [Zuruck] [Weiter]|    |   |             |    |
-|   +------------------+    |   +-------------+    |
-|                           |                      |
-+--------------------------------------------------+
-
-Mobile Layout:
-+---------------------------+
-|  [Back]  Mietvertrag      |
-+---------------------------+
-|   FormWizard              |
-|   +------------------+    |
-|   | Schritt 1 von 5  |    |
-|   |                  |    |
-|   | [Feld 1]         |    |
-|   | [Feld 2]         |    |
-|   +------------------+    |
-+---------------------------+
-|  Sticky Footer            |
-|  4,99 EUR  [Erstellen]    |
-+---------------------------+
-```
-
-### 3.4 Bundle-Seite (/bundles/[slug])
-
-```text
-Route: /bundles/:bundleSlug
-
-+--------------------------------------------------+
-|  Vermieter Starter-Kit                           |
-|  Alles was Sie brauchen fur den Start            |
-+--------------------------------------------------+
-|                                                  |
-|  Enthalten (5 Formulare):                        |
-|  - Mietvertrag                                   |
-|  - Ubergabeprotokoll                             |
-|  - Kundigung Vermieter                           |
-|  - Mahnung                                       |
-|  - Nebenkostenabrechnung                         |
-|                                                  |
-+--------------------------------------------------+
-|  Preisvergleich:                                 |
-|  Einzeln: 34,95 EUR                              |
-|  Bundle:  24,99 EUR  (Sie sparen 29%)            |
-|                                                  |
-|  [Bundle kaufen - 24,99 EUR]                     |
-+--------------------------------------------------+
-```
-
-### 3.5 Meine Formulare (/meine-formulare)
-
-```text
-Route: /meine-formulare (Protected)
-
-+--------------------------------------------------+
-|  Meine Formulare                                 |
-|  [Gekauft] [Entwurfe] [Erstellt]                |
-+--------------------------------------------------+
-|                                                  |
-|  +------------------------------------------+   |
-|  | Mietvertrag - Wohnung Musterstr. 1       |   |
-|  | Erstellt: 15.01.2026                      |   |
-|  | [Download] [Bearbeiten] [Loschen]         |   |
-|  +------------------------------------------+   |
-|  | Kundigung - Mieter Muller                 |   |
-|  | Erstellt: 10.01.2026                      |   |
-|  | [Download] [Bearbeiten] [Loschen]         |   |
-|  +------------------------------------------+   |
-|                                                  |
-+--------------------------------------------------+
-```
-
----
-
-## Phase 4: Frontend - Komponenten
-
-### 4.1 FormWizard
-
-```typescript
-interface FormWizardProps {
-  templateId: string;
-  initialData?: Record<string, any>;
-  onComplete: (data: Record<string, any>) => void;
-}
-
-Features:
-- Dynamische Schritte basierend auf form_templates.fields
-- Zod-Validation pro Schritt
-- LocalStorage-Persistence (Entwurf speichern)
-- Progress-Indicator
-- Paywall-Trigger bei letztem Schritt (wenn nicht berechtigt)
-```
-
-### 4.2 FormPreview
-
-```typescript
-interface FormPreviewProps {
-  templateId: string;
-  data: Record<string, any>;
-}
-
-Features:
-- Live-Vorschau wahrend Eingabe
-- PDF-ahnliches Styling
-- Responsive (versteckt auf Mobile)
-- Placeholder fur leere Felder
-```
-
-### 4.3 PriceModal
-
-```typescript
-interface PriceModalProps {
-  templateId: string;
-  onCheckout: () => void;
-}
-
-Features:
-- Zeigt Einzelpreis
-- Alternative: Passendes Bundle (falls gunstiger)
-- Alternative: Flatrate-Abo (falls mehrere Formulare)
-- Stripe Checkout Button
-```
-
-### 4.4 FormCard
-
-```typescript
-interface FormCardProps {
-  template: FormTemplate;
-  hasAccess: boolean;
-}
-
-Features:
-- Thumbnail
-- Name + Kurzbeschreibung
-- Preis-Badge (GRATIS / 4,99 EUR / PREMIUM)
-- Hover-Effekt mit mehr Details
-- Click -> /formulare/[slug]
-```
-
-### 4.5 BundleCard
-
-```typescript
-interface BundleCardProps {
-  bundle: Bundle;
-  formCount: number;
-  savings: number;
-}
-
-Features:
-- Bundle-Name + Beschreibung
+src/components/shop/BundleCard.tsx
+- Bundle-Thumbnail
 - "X Formulare enthalten" Badge
-- Ersparnis-Anzeige (z.B. "Spare 29%")
-- Click -> /bundles/[slug]
+- Ersparnis-Anzeige (vs. Einzelkauf)
+- CTA-Button
 ```
 
-### 4.6 PersonaWizard (Onboarding)
-
-```typescript
-Features:
-- Frage: "Sind Sie Vermieter oder Mieter?"
-- Optional: Weitere Fragen (Anzahl Wohnungen, etc.)
-- Speichert in profiles.persona
-- Skippable
-```
-
----
-
-## Phase 5: Onboarding-Flow
-
-### 5.1 Flow-Diagramm
-
+### 2.3 FormWizard Komponente
 ```text
-User startet Formular
-        |
-        v
-   Eingaben in LocalStorage
-        |
-        v
-   Bei Paywall-Trigger (Schritt X oder "Erstellen")
-        |
-        v
-   +-------------------+
-   | Modal: E-Mail     |
-   | eingeben          |
-   +-------------------+
-        |
-        v
-   Magic Link senden (Supabase Auth)
-        |
-        v
-   Nach Login
-        |
-        v
-   +-------------------+
-   | Persona-Wizard    |
-   | (optional)        |
-   +-------------------+
-        |
-        v
-   Formular fortsetzen (Daten aus LocalStorage)
-        |
-        v
-   Bei Checkout
-        |
-        v
-   Stripe Payment
-        |
-        v
-   +-------------------+
-   | PDF generieren    |
-   | Download anbieten |
-   | Cross-Sell zeigen |
-   +-------------------+
+src/components/shop/FormWizard.tsx
+- Props: templateId, initialData, onComplete
+- Dynamische Schritte aus form_templates.fields
+- Zod-Validierung pro Schritt
+- LocalStorage-Persistence
+- Fortschrittsanzeige
+- Paywall-Trigger bei finalem Schritt
 ```
 
-### 5.2 LocalStorage-Schema
+### 2.4 FormPreview Komponente
+```text
+src/components/shop/FormPreview.tsx
+- Live-Vorschau des Dokuments
+- PDF-ähnliches Styling
+- Responsive (versteckt auf Mobile)
+```
 
-```typescript
-interface FormDraft {
-  templateId: string;
-  currentStep: number;
-  data: Record<string, any>;
-  lastUpdated: string;
-}
+### 2.5 PriceModal Komponente
+```text
+src/components/shop/PriceModal.tsx
+- Preis + Alternativen (Bundle, Abo)
+- Stripe Checkout Integration
+- Login-Aufforderung falls nicht angemeldet
+```
 
-// Key: `form_draft_${slug}`
+### 2.6 ShopHeader Komponente
+```text
+src/components/shop/ShopHeader.tsx
+- Logo "FinTuttO Formulare"
+- Suche
+- Navigation (Kategorien, Bundles)
+- Login/Profil-Button
 ```
 
 ---
 
-## Phase 6: Routing-Anderungen
+## Phase 3: Daten-Hooks
 
-### 6.1 Neue Routes in App.tsx
-
-```typescript
-// Offentliche Seiten
-<Route path="/" element={<Landing />} />
-<Route path="/vermieter" element={<CategoryPage persona="vermieter" />} />
-<Route path="/mieter" element={<CategoryPage persona="mieter" />} />
-<Route path="/formulare/:slug" element={<FormularPage />} />
-<Route path="/bundles/:bundleSlug" element={<BundlePage />} />
-
-// Geschutzte Seiten
-<Route path="/meine-formulare" element={<ProtectedRoute><MeineFormulare /></ProtectedRoute>} />
+### 3.1 useFormTemplates Hook
+```text
+src/hooks/useFormTemplates.ts
+- Alle aktiven Templates laden
+- Filter nach Persona, Kategorie, Tier
+- Sortierung (beliebt, preis, a-z)
 ```
 
-### 6.2 SEO-Optimierung
-
-```typescript
-// Neue Komponente: SEOHead
-interface SEOHeadProps {
-  title: string;
-  description: string;
-  keywords?: string[];
-  canonical?: string;
-}
-
-// In jeder Formular-Seite:
-<SEOHead 
-  title={template.seo_title || `${template.name} erstellen | FinTuttO`}
-  description={template.seo_description}
-  keywords={template.seo_keywords}
-  canonical={`https://formulare.fintutto.de/${template.slug}`}
-/>
+### 3.2 useBundles Hook
+```text
+src/hooks/useBundles.ts
+- Aktive Bundles laden
+- Enthaltene Formulare (JOIN mit bundle_form_templates)
+- Ersparnis berechnen
 ```
 
----
-
-## Phase 7: Stripe-Integration erweitern
-
-### 7.1 Einmalzahlung (One-Time Payment)
-
-```typescript
-// Edge Function: create-form-checkout
-const session = await stripe.checkout.sessions.create({
-  mode: "payment",  // Nicht "subscription"
-  line_items: [{ price: template.stripe_price_id, quantity: 1 }],
-  metadata: { form_template_id: templateId, user_id: userId },
-  success_url: `/formulare/${slug}?success=true`,
-  cancel_url: `/formulare/${slug}`,
-});
+### 3.3 useFormAccess Hook
+```text
+src/hooks/useFormAccess.ts
+- Nutzt v_user_available_forms View
+- Prüft Zugriff auf bestimmtes Formular
+- Berücksichtigt: Tier, Einzelkauf, Bundle, Abo
 ```
 
-### 7.2 Webhook-Handler erweitern
-
-```typescript
-// checkout.session.completed handler
-if (session.mode === 'payment') {
-  const { form_template_id, bundle_id, user_id } = session.metadata;
-  
-  await supabase.from('form_purchases').insert({
-    user_id,
-    form_template_id: form_template_id || null,
-    bundle_id: bundle_id || null,
-    stripe_payment_intent: session.payment_intent,
-    amount_cents: session.amount_total,
-    status: 'completed',
-    purchased_at: new Date().toISOString(),
-  });
-}
+### 3.4 useFormDraft Hook
+```text
+src/hooks/useFormDraft.ts
+- LocalStorage + Supabase Sync
+- Speichert Wizard-Fortschritt
+- Lädt bestehende Entwürfe
 ```
 
 ---
 
-## Phase 8: Seed-Daten
+## Phase 4: Edge Functions
 
-### 8.1 Form Templates (Beispiel)
+### 4.1 create-form-checkout
+```text
+supabase/functions/create-form-checkout/index.ts
+- mode: "payment" (Einmalzahlung)
+- Metadata: form_template_id, user_id
+- Success-URL mit Formular-Slug
+```
+
+### 4.2 create-bundle-checkout
+```text
+supabase/functions/create-bundle-checkout/index.ts
+- mode: "payment" (Einmalzahlung)
+- Metadata: bundle_id, user_id
+- Success-URL zu /meine-formulare
+```
+
+### 4.3 stripe-webhook (erweitern)
+```text
+supabase/functions/stripe-webhook/index.ts
+- checkout.session.completed Handler
+- Unterscheidung: Subscription vs. Payment
+- Bei Payment: Eintrag in form_purchases erstellen
+```
+
+---
+
+## Phase 5: Seiten-Implementierung
+
+### 5.1 ShopLanding (/)
+
+**Layout:**
+```text
++------------------------------------------+
+|  ShopHeader                              |
++------------------------------------------+
+|  Hero: "60+ Formulare für Vermieter..."  |
+|  [Suchfeld]                              |
++------------------------------------------+
+|  Tabs: [Vermieter] [Mieter] [Alle]       |
++------------------------------------------+
+|  Beliebte Formulare (6er Grid)           |
+|  [FormCard] [FormCard] [FormCard]        |
+|  [FormCard] [FormCard] [FormCard]        |
++------------------------------------------+
+|  Bundles Section                         |
+|  [BundleCard] [BundleCard] [BundleCard]  |
++------------------------------------------+
+|  Testimonials (optional)                 |
++------------------------------------------+
+|  FAQ Accordion                           |
++------------------------------------------+
+```
+
+### 5.2 CategoryPage (/vermieter, /mieter)
+
+**Features:**
+- Filter-Leiste: Kategorie (Verträge, Schreiben, Protokolle, etc.)
+- Sortierung: Beliebt | Preis | A-Z
+- Grid mit FormCards
+- Pagination oder Infinite Scroll
+
+### 5.3 FormDetailPage (/formulare/[slug])
+
+**Desktop Layout:**
+```text
++----------------------+-------------------+
+| FormWizard           | FormPreview       |
+| [Schritt 1 von 4]    | (Live-Dokument)   |
+| [Eingabefelder]      |                   |
+| [Weiter]             |                   |
++----------------------+-------------------+
+```
+
+**Mobile Layout:**
+```text
++----------------------+
+| FormWizard           |
+| [Schritt 1 von 4]    |
+| [Eingabefelder]      |
++----------------------+
+| Sticky Footer:       |
+| €9,99 [Kaufen]       |
++----------------------+
+```
+
+### 5.4 BundleDetailPage (/bundles/[slug])
+
+**Inhalt:**
+- Bundle-Name und Beschreibung
+- Preis + Ersparnis-Badge
+- Liste enthaltener Formulare (mit Links)
+- Preisvergleich-Tabelle (Einzeln vs. Bundle)
+- CTA: "Bundle kaufen"
+
+### 5.5 MyForms (/meine-formulare)
+
+**Tabs:**
+1. **Gekauft**: Gekaufte Formulare + Bundles aus form_purchases
+2. **Entwürfe**: Unfertige Formulare aus user_form_drafts
+3. **Erstellt**: Fertige PDFs aus generated_documents
+
+**Aktionen pro Eintrag:**
+- Öffnen/Bearbeiten
+- PDF herunterladen
+- Löschen
+
+---
+
+## Phase 6: Datenbank-Erweiterungen
+
+### 6.1 Stripe Price IDs hinzufügen
 
 ```sql
-INSERT INTO form_templates (slug, name, category, persona, price_cents, tier, fields) VALUES
-('mietvertrag', 'Mietvertrag', 'vertraege', 'vermieter', 499, 'free', '[
-  {"step": 1, "title": "Vermieter", "fields": [
-    {"name": "vermieter_name", "type": "text", "label": "Name", "required": true},
-    {"name": "vermieter_adresse", "type": "textarea", "label": "Adresse", "required": true}
-  ]},
-  {"step": 2, "title": "Mieter", "fields": [
-    {"name": "mieter_name", "type": "text", "label": "Name", "required": true},
-    {"name": "mieter_adresse", "type": "textarea", "label": "Adresse", "required": true}
-  ]},
-  {"step": 3, "title": "Objekt", "fields": [
-    {"name": "objekt_adresse", "type": "textarea", "label": "Adresse des Mietobjekts", "required": true},
-    {"name": "objekt_groesse", "type": "number", "label": "Wohnflache (qm)", "required": true}
-  ]}
-]');
+-- Form Templates mit Stripe Price IDs versehen
+UPDATE form_templates SET stripe_price_id = 'price_xxx' 
+WHERE slug = 'mietvertrag-moebliert';
+-- etc. für alle kostenpflichtigen Formulare
+
+-- Bundles mit Stripe Price IDs versehen
+UPDATE bundles SET stripe_price_id = 'price_xxx' 
+WHERE slug = 'vermieter-starter';
 ```
 
-### 8.2 Bundles (Beispiel)
+### 6.2 Fehlende Formulare anlegen
+
+Laut Slug-Liste fehlen noch viele Formulare. Diese müssen in form_templates eingefügt werden:
 
 ```sql
-INSERT INTO bundles (slug, name, description, price_cents) VALUES
-('vermieter-starter', 'Vermieter Starter-Kit', '5 wichtige Formulare fur Vermieter', 2499),
-('mieter-schutz', 'Mieter Schutz-Paket', '4 Formulare zum Schutz Ihrer Rechte', 1999);
+INSERT INTO form_templates (slug, name, category, persona, tier, price_cents, fields) VALUES
+('wohnungsgeberbestaetigung', 'Wohnungsgeberbestätigung', 'sonstige', 'vermieter', 'free', 0, '[]'),
+('mietbescheinigung', 'Mietbescheinigung', 'sonstige', 'vermieter', 'free', 0, '[]'),
+-- ... weitere 50+ Formulare
 ```
 
 ---
 
-## Dateistruktur nach Implementierung
+## Phase 7: Styling und Branding
+
+### 7.1 Farbanpassung
+
+Primary Color auf Indigo #6366F1 setzen (bereits konfiguriert in index.css).
+
+### 7.2 Neue CSS-Klassen
+
+```css
+.form-card-hover { ... }
+.price-badge { ... }
+.tier-free { ... }
+.tier-basic { ... }
+.tier-premium { ... }
+```
+
+---
+
+## Technische Details
+
+### Datei-Struktur nach Implementierung:
 
 ```text
 src/
 ├── components/
-│   ├── forms/
-│   │   ├── FormWizard.tsx
-│   │   ├── FormPreview.tsx
+│   ├── shop/
 │   │   ├── FormCard.tsx
 │   │   ├── BundleCard.tsx
-│   │   └── PriceModal.tsx
-│   ├── landing/
-│   │   ├── HeroSearch.tsx
-│   │   ├── PersonaTabs.tsx
-│   │   ├── PopularForms.tsx
-│   │   ├── BundleSection.tsx
-│   │   ├── Testimonials.tsx
-│   │   └── FAQ.tsx
-│   ├── layout/
-│   │   ├── Header.tsx
-│   │   ├── Footer.tsx
-│   │   └── SEOHead.tsx
-│   └── onboarding/
-│       └── PersonaWizard.tsx
-├── pages/
-│   ├── Landing.tsx (neu)
-│   ├── CategoryPage.tsx (neu)
-│   ├── FormularPage.tsx (neu)
-│   ├── BundlePage.tsx (neu)
-│   └── MeineFormulare.tsx (neu)
+│   │   ├── FormWizard.tsx
+│   │   ├── FormPreview.tsx
+│   │   ├── PriceModal.tsx
+│   │   ├── ShopHeader.tsx
+│   │   ├── SearchBar.tsx
+│   │   ├── CategoryFilter.tsx
+│   │   └── PersonaTabs.tsx
+│   └── ... (bestehende)
 ├── hooks/
-│   ├── useFormTemplates.ts (neu)
-│   ├── useFormAccess.ts (neu)
-│   ├── useFormDraft.ts (neu)
-│   └── useBundles.ts (neu)
+│   ├── useFormTemplates.ts
+│   ├── useBundles.ts
+│   ├── useFormAccess.ts
+│   ├── useFormDraft.ts
+│   └── ... (bestehende)
+├── pages/
+│   ├── shop/
+│   │   ├── ShopLanding.tsx
+│   │   ├── CategoryPage.tsx
+│   │   ├── FormDetailPage.tsx
+│   │   ├── BundleDetailPage.tsx
+│   │   └── MyForms.tsx
+│   └── ... (bestehende)
 └── lib/
-    └── form-utils.ts (neu)
+    ├── formConstants.ts    (Slug-Liste, Kategorien)
+    └── ... (bestehende)
 
-supabase/
-└── functions/
-    ├── create-form-checkout/ (neu)
-    ├── create-bundle-checkout/ (neu)
-    ├── stripe-webhook/ (erweitern)
-    └── generate-pdf/ (neu)
+supabase/functions/
+├── create-form-checkout/
+│   └── index.ts
+├── create-bundle-checkout/
+│   └── index.ts
+├── stripe-webhook/
+│   └── index.ts
+└── ... (bestehende)
 ```
 
----
+### Implementierungs-Reihenfolge:
 
-## Implementierungsreihenfolge
+1. **Hooks und Daten-Layer** (useFormTemplates, useBundles, useFormAccess)
+2. **Basis-Komponenten** (FormCard, BundleCard, ShopHeader)
+3. **ShopLanding** als neue Startseite
+4. **CategoryPage** für /vermieter und /mieter
+5. **FormWizard und FormPreview**
+6. **FormDetailPage** mit Wizard-Integration
+7. **Edge Functions** für Checkout
+8. **BundleDetailPage**
+9. **MyForms** mit Tabs
+10. **Stripe-Webhook** erweitern
+11. **Datenbank-Seed** (fehlende Formulare)
 
-| Phase | Aufgabe | Abhangigkeiten |
-|-------|---------|----------------|
-| 1 | Datenbank-Schema + Seed-Daten | Keine |
-| 2 | Edge Functions (Checkout, Webhook) | Phase 1 |
-| 3 | Hooks (useFormTemplates, useFormAccess) | Phase 1 |
-| 4 | FormCard + BundleCard Komponenten | Phase 3 |
-| 5 | Landing Page Redesign | Phase 4 |
-| 6 | Kategorie-Seiten | Phase 4 |
-| 7 | FormWizard + FormPreview | Phase 3 |
-| 8 | Formular-Seite (/formulare/[slug]) | Phase 7 |
-| 9 | Bundle-Seite | Phase 4 |
-| 10 | Meine Formulare Seite | Phase 3 |
-| 11 | Onboarding/Persona-Wizard | Phase 8 |
-| 12 | PDF-Generierung | Phase 8 |
-| 13 | SEO-Optimierung | Phase 8 |
+### Geschätzte Dateien:
 
----
-
-## Geschatzter Aufwand
-
-- **Phase 1-2 (Backend)**: 2-3 Iterationen
-- **Phase 3-4 (Basis-Komponenten)**: 2 Iterationen
-- **Phase 5-6 (Landing + Kategorien)**: 2 Iterationen
-- **Phase 7-8 (FormWizard + Seiten)**: 3-4 Iterationen
-- **Phase 9-13 (Rest)**: 3-4 Iterationen
-
-**Gesamt**: ca. 12-16 Iterationen
-
+| Kategorie | Anzahl |
+|-----------|--------|
+| Neue Seiten | 5 |
+| Neue Komponenten | 10 |
+| Neue Hooks | 4 |
+| Edge Functions | 2-3 |
+| Migrationen | 2-3 |
+| **Gesamt** | ~25 Dateien |
