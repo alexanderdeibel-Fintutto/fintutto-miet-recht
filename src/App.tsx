@@ -16,6 +16,18 @@ import Dokumente from "./pages/Dokumente";
 import Profil from "./pages/Profil";
 import NotFound from "./pages/NotFound";
 
+// Property Management Pages
+import OrganizationSetup from "./pages/OrganizationSetup";
+import PropertyDashboard from "./pages/PropertyDashboard";
+import Buildings from "./pages/Buildings";
+import Units from "./pages/Units";
+import Leases from "./pages/Leases";
+import Tenants from "./pages/Tenants";
+import Meters from "./pages/Meters";
+import Tasks from "./pages/Tasks";
+import Messages from "./pages/Messages";
+import PropertySettings from "./pages/PropertySettings";
+
 // Calculators
 import RenditeRechner from "./pages/calculators/RenditeRechner";
 import FinanzierungsRechner from "./pages/calculators/FinanzierungsRechner";
@@ -36,6 +48,90 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+
+            {/* Organization Setup */}
+            <Route
+              path="/organization/setup"
+              element={
+                <ProtectedRoute>
+                  <OrganizationSetup />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Property Management Routes */}
+            <Route
+              path="/property"
+              element={
+                <ProtectedRoute>
+                  <PropertyDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/buildings"
+              element={
+                <ProtectedRoute>
+                  <Buildings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/units"
+              element={
+                <ProtectedRoute>
+                  <Units />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/leases"
+              element={
+                <ProtectedRoute>
+                  <Leases />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/tenants"
+              element={
+                <ProtectedRoute>
+                  <Tenants />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/meters"
+              element={
+                <ProtectedRoute>
+                  <Meters />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/tasks"
+              element={
+                <ProtectedRoute>
+                  <Tasks />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/messages"
+              element={
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/settings"
+              element={
+                <ProtectedRoute>
+                  <PropertySettings />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Protected Dashboard Routes */}
             <Route path="/dashboard" element={<Navigate to="/dashboard/formulare" replace />} />
