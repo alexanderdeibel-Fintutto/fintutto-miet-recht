@@ -1190,6 +1190,29 @@ export type Database = {
     }
     Functions: {
       count_user_documents: { Args: { _user_id: string }; Returns: number }
+      get_form_template_with_access: {
+        Args: { template_slug: string }
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          fields: Json
+          has_access: boolean
+          id: string
+          is_active: boolean
+          name: string
+          persona: string
+          price_cents: number
+          seo_description: string
+          seo_keywords: string[]
+          seo_title: string
+          slug: string
+          sort_order: number
+          template_content: string
+          thumbnail_url: string
+          tier: string
+        }[]
+      }
       get_user_tier: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["subscription_tier"]
