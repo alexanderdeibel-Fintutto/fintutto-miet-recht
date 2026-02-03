@@ -86,19 +86,27 @@ export function useFormTemplates(options: UseFormTemplatesOptions = {}) {
   });
 }
 
+// Extended template type that includes access info from RPC
+export interface FormTemplateWithAccess extends FormTemplate {
+  has_access: boolean;
+}
+
 export function useFormTemplate(slug: string) {
   return useQuery({
     queryKey: ['form-template', slug],
     queryFn: async () => {
+      // Use secure RPC function that checks access before returning sensitive fields
       const { data, error } = await supabase
-        .from('form_templates')
-        .select('*')
-        .eq('slug', slug)
-        .eq('is_active', true)
-        .single();
+        .rpc('get_form_template_with_access', { template_slug: slug });
 
       if (error) throw error;
-      return data as FormTemplate;
+      if (!data || data.length === 0) {
+        throw new Error('Template not found');
+      }
+      
+      // RPC returns an array, get the first (and only) result
+      const template = data[0];
+      return template as FormTemplateWithAccess;
     },
     enabled: !!slug,
   });
