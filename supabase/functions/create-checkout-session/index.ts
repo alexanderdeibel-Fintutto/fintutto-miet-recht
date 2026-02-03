@@ -52,7 +52,26 @@ serve(async (req) => {
 
     const { priceId, successUrl, cancelUrl } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
-    logStep("Request params", { priceId, successUrl, cancelUrl });
+
+    // Validate redirect URLs to prevent open redirect attacks
+    const validateRedirectUrl = (url: string | undefined): boolean => {
+      if (!url) return true; // Optional, will use default
+      try {
+        const parsed = new URL(url);
+        return ALLOWED_ORIGINS.includes(parsed.origin);
+      } catch {
+        return false;
+      }
+    };
+
+    if (!validateRedirectUrl(successUrl)) {
+      throw new Error("Invalid success URL");
+    }
+    if (!validateRedirectUrl(cancelUrl)) {
+      throw new Error("Invalid cancel URL");
+    }
+
+    logStep("Request params validated", { priceId, hasSuccessUrl: !!successUrl, hasCancelUrl: !!cancelUrl });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
