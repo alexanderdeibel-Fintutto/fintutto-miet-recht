@@ -26,6 +26,9 @@ import Nebenkostenrechner from '@/pages/rechner/Nebenkostenrechner'
 import Kautionsrechner from '@/pages/rechner/Kautionsrechner'
 import Kuendigungsfristrechner from '@/pages/rechner/Kuendigungsfristrechner'
 
+// Immobilien
+import Objekte from '@/pages/immobilien/Objekte'
+
 function App() {
   return (
     <>
@@ -53,6 +56,9 @@ function App() {
         <Route path="/rechner/nebenkosten" element={<Nebenkostenrechner />} />
         <Route path="/rechner/kaution" element={<Kautionsrechner />} />
         <Route path="/rechner/kuendigungsfrist" element={<Kuendigungsfristrechner />} />
+
+        {/* Immobilien */}
+        <Route path="/immobilien/objekte" element={<Objekte />} />
       </Routes>
       <Toaster />
       <CrossSellBanner variant="floating" />
