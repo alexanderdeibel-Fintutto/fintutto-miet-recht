@@ -1,5 +1,3 @@
-'use client'
-
 import * as React from 'react'
 import { User, Plus, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -71,6 +69,13 @@ export function PersonField({
     onChange({ ...value, [field]: fieldValue })
   }
 
+  const handleAISuggestion = (suggestion: unknown) => {
+    if (suggestion && typeof suggestion === 'object') {
+      const suggestionObj = suggestion as Partial<PersonData>
+      onChange({ ...value, ...suggestionObj })
+    }
+  }
+
   const isFirma = value.anrede === 'firma'
 
   return (
@@ -88,7 +93,7 @@ export function PersonField({
             fieldId="person"
             fieldType="person"
             context={{ currentValue: value }}
-            onSuggestion={(suggestion) => onChange({ ...value, ...suggestion })}
+            onSuggestion={handleAISuggestion}
           />
         )}
       </div>

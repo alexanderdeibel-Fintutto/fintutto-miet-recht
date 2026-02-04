@@ -1,23 +1,21 @@
-'use client'
-
 import * as React from 'react'
-import { Sparkles, Loader2, Lightbulb, AlertCircle, Check, X, HelpCircle, MessageSquare } from 'lucide-react'
+import { Sparkles, Loader2, Lightbulb, AlertCircle, Check, HelpCircle, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { cn } from '@/lib/utils'
 
-interface AIFieldHelperProps {
-  fieldId: string
-  fieldType: 'text' | 'currency' | 'date' | 'address' | 'person' | 'legal' | 'custom'
-  context?: Record<string, unknown>
-  onSuggestion?: (suggestion: any) => void
+export interface AIFieldHelperProps {
+  fieldId?: string
+  fieldName?: string // alias for fieldId
+  fieldType?: 'text' | 'currency' | 'date' | 'address' | 'person' | 'legal' | 'custom'
+  context?: Record<string, unknown> | string
+  legalReference?: string
+  onSuggestion?: (suggestion: unknown) => void
   disabled?: boolean
 }
 
@@ -128,14 +126,17 @@ const FIELD_HELP: Record<string, {
 const generateAISuggestion = async (
   fieldId: string,
   fieldType: string,
-  context: Record<string, unknown>
-): Promise<{ suggestion: any; explanation: string }> => {
+  context: Record<string, unknown> | string
+): Promise<{ suggestion: unknown; explanation: string }> => {
   // Simulierte Verzögerung
   await new Promise(resolve => setTimeout(resolve, 800))
 
+  // Normalize context to object
+  const contextObj = typeof context === 'string' ? {} : context
+
   // Kontext-basierte Vorschläge
   if (fieldType === 'currency' && fieldId.toLowerCase().includes('kalt')) {
-    const qm = (context.wohnflaeche as number) || 80
+    const qm = (contextObj.wohnflaeche as number) || 80
     const avgPricePerQm = 12 // Durchschnitt
     return {
       suggestion: Math.round(qm * avgPricePerQm * 100) / 100,
@@ -144,7 +145,7 @@ const generateAISuggestion = async (
   }
 
   if (fieldType === 'currency' && fieldId.toLowerCase().includes('neben')) {
-    const qm = (context.wohnflaeche as number) || 80
+    const qm = (contextObj.wohnflaeche as number) || 80
     return {
       suggestion: Math.round(qm * 2.5 * 100) / 100,
       explanation: `Typische Nebenkostenvorauszahlung von 2,50€/m² für ${qm}m² Wohnfläche.`
@@ -159,21 +160,25 @@ const generateAISuggestion = async (
 
 export function AIFieldHelper({
   fieldId,
-  fieldType,
+  fieldName,
+  fieldType = 'text',
   context = {},
+  legalReference,
   onSuggestion,
   disabled = false
 }: AIFieldHelperProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
-  const [suggestion, setSuggestion] = React.useState<{ value: any; explanation: string } | null>(null)
+  const [suggestion, setSuggestion] = React.useState<{ value: unknown; explanation: string } | null>(null)
 
-  const helpContent = FIELD_HELP[fieldId.toLowerCase()] || FIELD_HELP[fieldType] || null
+  // Use fieldName as alias for fieldId
+  const resolvedFieldId = fieldId || fieldName || 'unknown'
+  const helpContent = FIELD_HELP[resolvedFieldId.toLowerCase()] || FIELD_HELP[fieldType] || null
 
   const handleGetSuggestion = async () => {
     setIsLoading(true)
     try {
-      const result = await generateAISuggestion(fieldId, fieldType, context)
+      const result = await generateAISuggestion(resolvedFieldId, fieldType, context)
       setSuggestion({
         value: result.suggestion,
         explanation: result.explanation
@@ -255,16 +260,27 @@ export function AIFieldHelper({
 
               {/* Rechtliche Hinweise */}
               {helpContent.legalHints && helpContent.legalHints.length > 0 && (
-                <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <h6 className="text-xs font-medium text-yellow-800 mb-1 flex items-center gap-1">
+                <div className="p-2 bg-amber-50 border border-amber-200 rounded-md">
+                  <h6 className="text-xs font-medium text-amber-800 mb-1 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     Rechtlicher Hinweis
                   </h6>
-                  <ul className="text-xs text-yellow-700 space-y-1">
+                  <ul className="text-xs text-amber-700 space-y-1">
                     {helpContent.legalHints.map((hint, i) => (
                       <li key={i}>• {hint}</li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {/* Custom legal reference */}
+              {legalReference && (
+                <div className="p-2 bg-amber-50 border border-amber-200 rounded-md">
+                  <h6 className="text-xs font-medium text-amber-800 mb-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Rechtliche Grundlage
+                  </h6>
+                  <p className="text-xs text-amber-700">{legalReference}</p>
                 </div>
               )}
 
@@ -323,7 +339,7 @@ export function AIFieldHelper({
                       <span className="font-medium">
                         {typeof suggestion.value === 'number'
                           ? suggestion.value.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
-                          : suggestion.value}
+                          : String(suggestion.value)}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mb-2">
