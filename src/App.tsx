@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
+import { CrossSellBanner } from '@/components/marketing/CrossSellBanner'
 
 // Pages
 import HomePage from '@/pages/HomePage'
@@ -54,6 +55,7 @@ function App() {
         <Route path="/rechner/kuendigungsfrist" element={<Kuendigungsfristrechner />} />
       </Routes>
       <Toaster />
+      <CrossSellBanner variant="floating" />
     </>
   )
 }
