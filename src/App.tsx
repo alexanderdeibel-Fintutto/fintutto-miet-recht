@@ -10,6 +10,10 @@ import Impressum from '@/pages/Impressum'
 import Datenschutz from '@/pages/Datenschutz'
 import AGB from '@/pages/AGB'
 
+// Auth
+import Login from '@/pages/auth/Login'
+import Register from '@/pages/auth/Register'
+
 // Formulare
 import Mietvertrag from '@/pages/formulare/Mietvertrag'
 import Kuendigung from '@/pages/formulare/Kuendigung'
@@ -33,6 +37,10 @@ function App() {
   return (
     <>
       <Routes>
+        {/* Auth */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
         {/* Hauptseiten */}
         <Route path="/" element={<HomePage />} />
         <Route path="/meine-dokumente" element={<MeineDokumente />} />
