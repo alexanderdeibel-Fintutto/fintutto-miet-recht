@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Loader2, Mail, Lock, User } from 'lucide-react'
 import { Navigation } from '@/components/layout/Navigation'
 import { Footer } from '@/components/layout/Footer'
+import { validatePassword } from '@/lib/validation/password'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -33,10 +34,12 @@ export default function Register() {
       return
     }
 
-    if (password.length < 6) {
+    // Validate password strength (NIST recommends 8+ characters)
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.valid) {
       toast({
-        title: 'Passwort zu kurz',
-        description: 'Das Passwort muss mindestens 6 Zeichen lang sein.',
+        title: 'Passwort zu schwach',
+        description: passwordValidation.message,
         variant: 'destructive'
       })
       return
