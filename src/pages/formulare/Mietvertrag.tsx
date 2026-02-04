@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useFormSave } from '@/hooks/useFormSave'
 import { MietvertragData, INITIAL_MIETVERTRAG, EMPTY_PERSON, EMPTY_SIGNATURE } from '@/types/mietvertrag'
 import { AuthRequiredDialog } from '@/components/dialogs/AuthRequiredDialog'
+import { MietvertragDraftSchema, parseAndValidateDraft } from '@/lib/validation/draft-schemas'
 
 // Step Components
 import { Step1Vertragsparteien } from '@/pages/formulare/steps/mietvertrag/Step1Vertragsparteien'
@@ -102,19 +103,27 @@ export default function MietvertragFormularPage() {
     }
   }
 
-  // Entwurf laden beim Start
+  // Entwurf laden beim Start (mit Schema-Validierung)
   React.useEffect(() => {
-    const draft = localStorage.getItem('mietvertrag-draft')
-    if (draft) {
-      try {
-        const parsed = JSON.parse(draft)
-        setFormData({ ...INITIAL_MIETVERTRAG, ...parsed })
+    const { data, wasInvalid } = parseAndValidateDraft(
+      'mietvertrag-draft',
+      MietvertragDraftSchema,
+      INITIAL_MIETVERTRAG
+    )
+    
+    if (data !== INITIAL_MIETVERTRAG) {
+      setFormData(data as MietvertragData)
+      if (wasInvalid) {
+        toast({
+          title: "Entwurf zurückgesetzt",
+          description: "Der gespeicherte Entwurf war beschädigt und wurde zurückgesetzt.",
+          variant: "destructive"
+        })
+      } else {
         toast({
           title: "Entwurf geladen",
           description: "Ihr gespeicherter Entwurf wurde wiederhergestellt.",
         })
-      } catch (error) {
-        console.error('Could not load draft:', error)
       }
     }
   }, [])

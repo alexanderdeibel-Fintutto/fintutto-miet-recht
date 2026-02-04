@@ -20,6 +20,7 @@ import {
 } from '@/types/uebergabeprotokoll'
 import { EMPTY_PERSON, EMPTY_ADDRESS, EMPTY_SIGNATURE } from '@/types/mietvertrag'
 import { AuthRequiredDialog } from '@/components/dialogs/AuthRequiredDialog'
+import { UebergabeprotokollDraftSchema, parseAndValidateDraft } from '@/lib/validation/draft-schemas'
 
 // Step Components
 import { Step1Grunddaten } from './steps/uebergabeprotokoll/Step1Grunddaten'
@@ -132,18 +133,27 @@ export default function UebergabeprotokollPage() {
     }
   }
 
+  // Load draft with schema validation
   React.useEffect(() => {
-    const draft = localStorage.getItem('uebergabeprotokoll-draft')
-    if (draft) {
-      try {
-        const parsed = JSON.parse(draft)
-        setFormData({ ...INITIAL_DATA, ...parsed })
+    const { data, wasInvalid } = parseAndValidateDraft(
+      'uebergabeprotokoll-draft',
+      UebergabeprotokollDraftSchema,
+      INITIAL_DATA
+    )
+    
+    if (data !== INITIAL_DATA) {
+      setFormData(data as UebergabeprotokollData)
+      if (wasInvalid) {
+        toast({
+          title: "Entwurf zurückgesetzt",
+          description: "Der gespeicherte Entwurf war beschädigt und wurde zurückgesetzt.",
+          variant: "destructive"
+        })
+      } else {
         toast({
           title: "Entwurf geladen",
           description: "Ihr gespeicherter Entwurf wurde wiederhergestellt.",
         })
-      } catch (error) {
-        console.error('Could not load draft:', error)
       }
     }
   }, [])
