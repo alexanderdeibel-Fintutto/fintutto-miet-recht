@@ -16,22 +16,46 @@ export interface SignatureData {
 }
 
 interface SignatureFieldProps {
-  value: SignatureData
-  onChange: (value: SignatureData) => void
+  value: any
+  onChange: (value: any) => void
   label?: string
   required?: boolean
   showLocation?: boolean
   disabled?: boolean
 }
 
+// Helper to normalize value to SignatureData
+const normalizeValue = (value: any): SignatureData => {
+  if (typeof value === 'string') {
+    return {
+      imageData: value || null,
+      signerName: '',
+      signedAt: null,
+      signedLocation: ''
+    }
+  }
+  return value || { imageData: null, signerName: '', signedAt: null, signedLocation: '' }
+}
+
 export function SignatureField({
-  value,
+  value: rawValue,
   onChange,
   label = "Unterschrift",
   required = false,
   showLocation = true,
   disabled = false
 }: SignatureFieldProps) {
+  const value = normalizeValue(rawValue)
+  
+  // Helper to emit the right type based on input type
+  const handleChange = (newValue: SignatureData) => {
+    if (typeof rawValue === 'string') {
+      onChange(newValue.imageData || '')
+    } else {
+      onChange(newValue)
+    }
+  }
+  
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = React.useState(false)
   const [hasSignature, setHasSignature] = React.useState(!!value.imageData)
