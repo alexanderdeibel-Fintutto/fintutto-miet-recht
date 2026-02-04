@@ -33,7 +33,7 @@ export function AddressAutocomplete({
   const wrapperRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<NodeJS.Timeout>()
 
-  const { isLoaded, error, getPlacePredictions, getPlaceDetails } = useGoogleMaps()
+  const { error, getPlacePredictions, getPlaceDetails } = useGoogleMaps()
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -48,7 +48,7 @@ export function AddressAutocomplete({
 
   // Fetch predictions with debounce
   useEffect(() => {
-    if (!isLoaded || !inputValue || inputValue.length < 3) {
+    if (!inputValue || inputValue.length < 3) {
       setPredictions([])
       return
     }
@@ -73,7 +73,7 @@ export function AddressAutocomplete({
         clearTimeout(debounceRef.current)
       }
     }
-  }, [inputValue, isLoaded, getPlacePredictions, selectedAddress])
+  }, [inputValue, getPlacePredictions, selectedAddress])
 
   const handleSelect = async (prediction: PlacePrediction) => {
     setIsValidating(true)
@@ -135,8 +135,7 @@ export function AddressAutocomplete({
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => predictions.length > 0 && setIsOpen(true)}
-          placeholder={!isLoaded ? 'Google Maps wird geladen...' : placeholder}
-          disabled={!isLoaded}
+          placeholder={placeholder}
           className={cn(
             'pl-10 pr-10',
             isValidated && 'border-primary focus-visible:ring-primary'
