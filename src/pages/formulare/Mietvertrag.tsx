@@ -11,7 +11,9 @@ import {
 } from 'lucide-react'
 import { FormWizard, WizardStep } from '@/components/wizard/FormWizard'
 import { useToast } from '@/hooks/use-toast'
+import { useFormSave } from '@/hooks/useFormSave'
 import { MietvertragData, INITIAL_MIETVERTRAG, EMPTY_PERSON, EMPTY_SIGNATURE } from '@/types/mietvertrag'
+import { AuthRequiredDialog } from '@/components/dialogs/AuthRequiredDialog'
 
 // Step Components
 import { Step1Vertragsparteien } from '@/pages/formulare/steps/mietvertrag/Step1Vertragsparteien'
@@ -65,6 +67,7 @@ const WIZARD_STEPS: WizardStep[] = [
 export default function MietvertragFormularPage() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { saveForm, isLoading: isSaving, showAuthDialog, setShowAuthDialog, redirectToLogin } = useFormSave()
   const [currentStep, setCurrentStep] = React.useState(0)
   const [formData, setFormData] = React.useState<MietvertragData>(INITIAL_MIETVERTRAG)
   const [isLoading, setIsLoading] = React.useState(false)
@@ -137,33 +140,20 @@ export default function MietvertragFormularPage() {
     }
   }
 
-  // Formular abschließen
+  // Formular abschließen - Entwurf speichern
   const handleComplete = async () => {
-    setIsLoading(true)
-    try {
-      // Hier könnte man das Formular an ein Backend senden
-      await generateMietvertragPDF(formData)
+    // Generate title from form data
+    const address = formData.objektAdresse
+    const title = address?.strasse 
+      ? `Mietvertrag - ${address.strasse} ${address.hausnummer || ''}, ${address.plz || ''} ${address.ort || ''}`
+      : `Mietvertrag - ${new Date().toLocaleDateString('de-DE')}`
 
-      // Entwurf löschen
-      localStorage.removeItem('mietvertrag-draft')
-
-      toast({
-        title: "Mietvertrag erstellt!",
-        description: "Ihr Mietvertrag wurde erfolgreich erstellt und als PDF heruntergeladen.",
-        variant: "success"
-      })
-
-      // Optional: Weiterleitung
-      // navigate('/meine-dokumente')
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Der Mietvertrag konnte nicht erstellt werden.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
-    }
+    await saveForm({
+      formSlug: 'mietvertrag',
+      title: title.trim(),
+      inputData: formData as unknown as Record<string, unknown>,
+      status: 'draft'
+    })
   }
 
   // Aktuellen Schritt rendern
@@ -193,19 +183,28 @@ export default function MietvertragFormularPage() {
   }
 
   return (
-    <FormWizard
-      steps={WIZARD_STEPS}
-      currentStep={currentStep}
-      onStepChange={setCurrentStep}
-      onComplete={handleComplete}
-      onSaveDraft={handleSaveDraft}
-      onExportPDF={currentStep === 5 ? handleExportPDF : undefined}
-      title="Mietvertrag Wohnraum"
-      description="Erstellen Sie einen rechtssicheren Wohnraummietvertrag"
-      isLoading={isLoading}
-      canProceed={true}
-    >
-      {renderStep()}
-    </FormWizard>
+    <>
+      <FormWizard
+        steps={WIZARD_STEPS}
+        currentStep={currentStep}
+        onStepChange={setCurrentStep}
+        onComplete={handleComplete}
+        onSaveDraft={handleSaveDraft}
+        onExportPDF={currentStep === 5 ? handleExportPDF : undefined}
+        title="Mietvertrag Wohnraum"
+        description="Erstellen Sie einen rechtssicheren Wohnraummietvertrag"
+        isLoading={isLoading || isSaving}
+        canProceed={true}
+      >
+        {renderStep()}
+      </FormWizard>
+
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onLogin={redirectToLogin}
+        onRegister={() => navigate('/register')}
+      />
+    </>
   )
 }
