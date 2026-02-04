@@ -1,5 +1,3 @@
-'use client'
-
 import * as React from 'react'
 import { Pen, RotateCcw, Check, Calendar, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -15,26 +13,62 @@ export interface SignatureData {
   signedLocation?: string
 }
 
-interface SignatureFieldProps {
-  value: SignatureData
-  onChange: (value: SignatureData) => void
+// Overloaded props for different use cases
+interface SignatureFieldPropsBase {
   label?: string
   required?: boolean
   showLocation?: boolean
   disabled?: boolean
 }
 
-export function SignatureField({
-  value,
-  onChange,
-  label = "Unterschrift",
-  required = false,
-  showLocation = true,
-  disabled = false
-}: SignatureFieldProps) {
+interface SignatureFieldPropsSignatureData extends SignatureFieldPropsBase {
+  value: SignatureData
+  onChange: (value: SignatureData) => void
+}
+
+interface SignatureFieldPropsString extends SignatureFieldPropsBase {
+  value: string
+  onChange: (value: string) => void
+}
+
+type SignatureFieldProps = SignatureFieldPropsSignatureData | SignatureFieldPropsString
+
+const defaultSignatureData: SignatureData = {
+  imageData: null,
+  signerName: '',
+  signedAt: null,
+  signedLocation: ''
+}
+
+export function SignatureField(props: SignatureFieldProps) {
+  const {
+    label = "Unterschrift",
+    required = false,
+    showLocation = true,
+    disabled = false
+  } = props
+
+  // Determine if we're in string mode or object mode based on value type
+  const isStringMode = typeof props.value === 'string'
+  
+  // Normalize value to SignatureData for internal use
+  const signatureValue: SignatureData = isStringMode 
+    ? { ...defaultSignatureData, signerName: props.value as string }
+    : (props.value as SignatureData) || defaultSignatureData
+
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = React.useState(false)
-  const [hasSignature, setHasSignature] = React.useState(!!value.imageData)
+  const [hasSignature, setHasSignature] = React.useState(!!signatureValue.imageData)
+
+  // Helper to emit changes in the correct format
+  const emitChange = (newValue: SignatureData) => {
+    if (isStringMode) {
+      // In string mode, emit the image data or signer name
+      (props.onChange as (value: string) => void)(newValue.imageData || newValue.signerName || '')
+    } else {
+      (props.onChange as (value: SignatureData) => void)(newValue)
+    }
+  }
 
   // Canvas initialisieren
   React.useEffect(() => {
@@ -61,12 +95,12 @@ export function SignatureField({
     ctx.lineJoin = 'round'
 
     // Vorhandene Signatur laden
-    if (value.imageData) {
+    if (signatureValue.imageData) {
       const img = new Image()
       img.onload = () => {
         ctx.drawImage(img, 0, 0, rect.width, rect.height)
       }
-      img.src = value.imageData
+      img.src = signatureValue.imageData
     }
   }, [])
 
@@ -126,8 +160,8 @@ export function SignatureField({
     if (!canvas) return
 
     const imageData = canvas.toDataURL('image/png')
-    onChange({
-      ...value,
+    emitChange({
+      ...signatureValue,
       imageData,
       signedAt: new Date().toISOString()
     })
@@ -143,18 +177,19 @@ export function SignatureField({
     ctx.fillRect(0, 0, rect.width, rect.height)
 
     setHasSignature(false)
-    onChange({
-      ...value,
+    emitChange({
+      ...signatureValue,
       imageData: null,
       signedAt: null
     })
   }
 
-  const handleConfirm = () => {
-    onChange({
-      ...value,
-      signedAt: new Date().toISOString()
-    })
+  const handleSignerNameChange = (name: string) => {
+    emitChange({ ...signatureValue, signerName: name })
+  }
+
+  const handleLocationChange = (location: string) => {
+    emitChange({ ...signatureValue, signedLocation: location })
   }
 
   return (
@@ -186,8 +221,8 @@ export function SignatureField({
             </Label>
             <Input
               id="signerName"
-              value={value.signerName}
-              onChange={(e) => onChange({ ...value, signerName: e.target.value })}
+              value={signatureValue.signerName}
+              onChange={(e) => handleSignerNameChange(e.target.value)}
               placeholder="Max Mustermann"
               disabled={disabled}
               className="mt-1"
@@ -235,8 +270,8 @@ export function SignatureField({
                 </Label>
                 <Input
                   id="signedLocation"
-                  value={value.signedLocation || ''}
-                  onChange={(e) => onChange({ ...value, signedLocation: e.target.value })}
+                  value={signatureValue.signedLocation || ''}
+                  onChange={(e) => handleLocationChange(e.target.value)}
                   placeholder="Berlin"
                   disabled={disabled}
                   className="mt-1"
@@ -249,19 +284,19 @@ export function SignatureField({
                 Datum
               </Label>
               <div className="mt-1 h-10 px-3 flex items-center border rounded-md bg-muted text-sm">
-                {value.signedAt ? formatDate(value.signedAt) : formatDate(new Date())}
+                {signatureValue.signedAt ? formatDate(signatureValue.signedAt) : formatDate(new Date())}
               </div>
             </div>
           </div>
 
           {/* Status-Anzeige */}
-          {value.signedAt && hasSignature && (
+          {signatureValue.signedAt && hasSignature && (
             <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
               <div className="flex items-center gap-2 text-green-800 text-sm">
                 <Check className="h-4 w-4" />
                 <span>
-                  Unterschrieben am {formatDate(value.signedAt)}
-                  {value.signedLocation && ` in ${value.signedLocation}`}
+                  Unterschrieben am {formatDate(signatureValue.signedAt)}
+                  {signatureValue.signedLocation && ` in ${signatureValue.signedLocation}`}
                 </span>
               </div>
             </div>

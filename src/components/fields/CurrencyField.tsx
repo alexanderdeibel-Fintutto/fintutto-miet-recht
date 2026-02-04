@@ -1,7 +1,5 @@
-'use client'
-
 import * as React from 'react'
-import { Euro, Calculator, Sparkles } from 'lucide-react'
+import { Euro, Calculator } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -9,10 +7,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn, formatCurrency } from '@/lib/utils'
 import { AIFieldHelper } from '@/components/ai/AIFieldHelper'
 
-interface CurrencyFieldProps {
+export interface CurrencyFieldProps {
   value: number | null
   onChange: (value: number | null) => void
-  label: string
+  label?: string
   required?: boolean
   min?: number
   max?: number
@@ -47,6 +45,8 @@ export function CurrencyField({
     value !== null ? value.toString().replace('.', ',') : ''
   )
   const [isFocused, setIsFocused] = React.useState(false)
+
+  const fieldId = label || 'currency-field'
 
   // Sync mit externem Value
   React.useEffect(() => {
@@ -106,48 +106,50 @@ export function CurrencyField({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label htmlFor={label} className="text-sm font-medium">
-          {label}
-          {required && <span className="text-destructive ml-1">*</span>}
-        </Label>
-        <div className="flex items-center gap-1">
-          {calculation && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCalculation}
-                    disabled={disabled}
-                    className="h-7 px-2"
-                  >
-                    <Calculator className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{calculation.label}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          {showAIHelper && (
-            <AIFieldHelper
-              fieldId={label}
-              fieldType="currency"
-              context={aiContext}
-              onSuggestion={handleAISuggestion}
-            />
-          )}
+      {label && (
+        <div className="flex items-center justify-between">
+          <Label htmlFor={fieldId} className="text-sm font-medium">
+            {label}
+            {required && <span className="text-destructive ml-1">*</span>}
+          </Label>
+          <div className="flex items-center gap-1">
+            {calculation && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCalculation}
+                      disabled={disabled}
+                      className="h-7 px-2"
+                    >
+                      <Calculator className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{calculation.label}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {showAIHelper && (
+              <AIFieldHelper
+                fieldId={fieldId}
+                fieldType="currency"
+                context={aiContext}
+                onSuggestion={handleAISuggestion}
+              />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="relative">
         <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          id={label}
+          id={fieldId}
           type="text"
           inputMode="decimal"
           value={inputValue}
