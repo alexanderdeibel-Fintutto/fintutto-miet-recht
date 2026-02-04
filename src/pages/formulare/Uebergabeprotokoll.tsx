@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { FormWizard, WizardStep } from '@/components/wizard/FormWizard'
 import { useToast } from '@/hooks/use-toast'
+import { useFormSave } from '@/hooks/useFormSave'
 import {
   UebergabeprotokollData,
   STANDARD_SCHLUESSEL,
@@ -18,6 +19,7 @@ import {
   EMPTY_RAUM
 } from '@/types/uebergabeprotokoll'
 import { EMPTY_PERSON, EMPTY_ADDRESS, EMPTY_SIGNATURE } from '@/types/mietvertrag'
+import { AuthRequiredDialog } from '@/components/dialogs/AuthRequiredDialog'
 
 // Step Components
 import { Step1Grunddaten } from './steps/uebergabeprotokoll/Step1Grunddaten'
@@ -105,6 +107,7 @@ const INITIAL_DATA: UebergabeprotokollData = {
 export default function UebergabeprotokollPage() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { saveForm, isLoading: isSaving, showAuthDialog, setShowAuthDialog, redirectToLogin } = useFormSave()
   const [currentStep, setCurrentStep] = React.useState(0)
   const [formData, setFormData] = React.useState<UebergabeprotokollData>(INITIAL_DATA)
   const [isLoading, setIsLoading] = React.useState(false)
@@ -146,24 +149,19 @@ export default function UebergabeprotokollPage() {
   }, [])
 
   const handleComplete = async () => {
-    setIsLoading(true)
-    try {
-      // Hier wuerde PDF-Export kommen
-      localStorage.removeItem('uebergabeprotokoll-draft')
-      toast({
-        title: "Protokoll erstellt!",
-        description: "Das Uebergabeprotokoll wurde erfolgreich erstellt.",
-        variant: "success"
-      })
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Das Protokoll konnte nicht erstellt werden.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
-    }
+    // Generate title from form data
+    const address = formData.objektAdresse
+    const protokollTyp = formData.protokollart === 'einzug' ? 'Einzugsprotokoll' : 'Auszugsprotokoll'
+    const title = address?.strasse 
+      ? `${protokollTyp} - ${address.strasse} ${address.hausnummer || ''}, ${address.plz || ''} ${address.ort || ''}`
+      : `${protokollTyp} - ${new Date().toLocaleDateString('de-DE')}`
+
+    await saveForm({
+      formSlug: 'uebergabeprotokoll',
+      title: title.trim(),
+      inputData: formData as unknown as Record<string, unknown>,
+      status: 'draft'
+    })
   }
 
   const renderStep = () => {
@@ -186,18 +184,27 @@ export default function UebergabeprotokollPage() {
   }
 
   return (
-    <FormWizard
-      steps={WIZARD_STEPS}
-      currentStep={currentStep}
-      onStepChange={setCurrentStep}
-      onComplete={handleComplete}
-      onSaveDraft={handleSaveDraft}
-      title="Wohnungsuebergabeprotokoll"
-      description={formData.protokollart === 'einzug' ? 'Einzugsprotokoll' : 'Auszugsprotokoll'}
-      isLoading={isLoading}
-      canProceed={true}
-    >
-      {renderStep()}
-    </FormWizard>
+    <>
+      <FormWizard
+        steps={WIZARD_STEPS}
+        currentStep={currentStep}
+        onStepChange={setCurrentStep}
+        onComplete={handleComplete}
+        onSaveDraft={handleSaveDraft}
+        title="Wohnungsuebergabeprotokoll"
+        description={formData.protokollart === 'einzug' ? 'Einzugsprotokoll' : 'Auszugsprotokoll'}
+        isLoading={isLoading || isSaving}
+        canProceed={true}
+      >
+        {renderStep()}
+      </FormWizard>
+
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        onLogin={redirectToLogin}
+        onRegister={() => navigate('/register')}
+      />
+    </>
   )
 }
