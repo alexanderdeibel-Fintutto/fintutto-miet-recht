@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_cross_sell_triggers: {
+        Row: {
+          created_at: string | null
+          cta_text: string | null
+          headline: string
+          id: string
+          is_active: boolean | null
+          message: string
+          priority: number | null
+          source_app_id: string
+          target_app_id: string
+          trigger_context: string | null
+          trigger_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          cta_text?: string | null
+          headline: string
+          id?: string
+          is_active?: boolean | null
+          message: string
+          priority?: number | null
+          source_app_id: string
+          target_app_id: string
+          trigger_context?: string | null
+          trigger_type?: string
+        }
+        Update: {
+          created_at?: string | null
+          cta_text?: string | null
+          headline?: string
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          priority?: number | null
+          source_app_id?: string
+          target_app_id?: string
+          trigger_context?: string | null
+          trigger_type?: string
+        }
+        Relationships: []
+      }
       ai_usage_log: {
         Row: {
           action: string
@@ -719,6 +761,54 @@ export type Database = {
           stripe_customer_id?: string | null
           subscription_plan?: string | null
           type?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          app_id: string
+          app_url: string | null
+          created_at: string | null
+          description: string | null
+          features: Json | null
+          icon_url: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price_cents: number
+          sort_order: number | null
+          stripe_price_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          app_id: string
+          app_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price_cents?: number
+          sort_order?: number | null
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          app_id?: string
+          app_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_cents?: number
+          sort_order?: number | null
+          stripe_price_id?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
