@@ -49,7 +49,7 @@ const ANREDE_OPTIONS = [
 ]
 
 const TITEL_OPTIONS = [
-  { value: '', label: 'Kein Titel' },
+  { value: 'none', label: 'Kein Titel' },
   { value: 'Dr.', label: 'Dr.' },
   { value: 'Prof.', label: 'Prof.' },
   { value: 'Prof. Dr.', label: 'Prof. Dr.' },
@@ -128,8 +128,8 @@ export function PersonField({
               Titel
             </Label>
             <Select
-              value={value.titel || ''}
-              onValueChange={(v) => handleChange('titel', v)}
+              value={value.titel || 'none'}
+              onValueChange={(v) => handleChange('titel', v === 'none' ? '' : v)}
               disabled={disabled}
             >
               <SelectTrigger className="mt-1">
