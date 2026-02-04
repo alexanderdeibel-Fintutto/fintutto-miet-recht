@@ -1,16 +1,5 @@
-/// <reference types="@types/google.maps" />
-import { useState, useEffect, useCallback } from 'react'
-
-declare global {
-  interface Window {
-    google: typeof google
-    initGoogleMaps: () => void
-  }
-}
-
-interface UseGoogleMapsOptions {
-  apiKey?: string
-}
+import { useState, useCallback } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 
 interface PlacePrediction {
   description: string
@@ -18,17 +7,6 @@ interface PlacePrediction {
   structured_formatting: {
     main_text: string
     secondary_text: string
-  }
-}
-
-interface PlaceDetails {
-  formatted_address: string
-  address_components: google.maps.GeocoderAddressComponent[]
-  geometry: {
-    location: {
-      lat: number
-      lng: number
-    }
   }
 }
 
@@ -44,133 +22,88 @@ interface ParsedAddress {
   placeId: string
 }
 
-let isScriptLoading = false
-let isScriptLoaded = false
-const loadCallbacks: (() => void)[] = []
-
-export function useGoogleMaps(options: UseGoogleMapsOptions = {}) {
-  const [isLoaded, setIsLoaded] = useState(isScriptLoaded)
+export function useGoogleMaps() {
   const [error, setError] = useState<string | null>(null)
-  const apiKey = options.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-
-  useEffect(() => {
-    if (isScriptLoaded) {
-      setIsLoaded(true)
-      return
-    }
-
-    if (isScriptLoading) {
-      loadCallbacks.push(() => setIsLoaded(true))
-      return
-    }
-
-    if (!apiKey) {
-      setError('Google Maps API Key nicht konfiguriert')
-      return
-    }
-
-    isScriptLoading = true
-
-    window.initGoogleMaps = () => {
-      isScriptLoaded = true
-      isScriptLoading = false
-      setIsLoaded(true)
-      loadCallbacks.forEach(cb => cb())
-      loadCallbacks.length = 0
-    }
-
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMaps&language=de`
-    script.async = true
-    script.defer = true
-    script.onerror = () => {
-      setError('Google Maps konnte nicht geladen werden')
-      isScriptLoading = false
-    }
-
-    document.head.appendChild(script)
-  }, [apiKey])
 
   const getPlacePredictions = useCallback(
     async (input: string): Promise<PlacePrediction[]> => {
-      if (!isLoaded || !window.google) return []
+      if (!input || input.length < 3) return []
 
-      return new Promise((resolve) => {
-        const service = new window.google.maps.places.AutocompleteService()
-        service.getPlacePredictions(
-          {
-            input,
-            componentRestrictions: { country: ['de', 'at', 'ch'] },
-            types: ['address'],
-          },
-          (predictions, status) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-              resolve(predictions as PlacePrediction[])
-            } else {
-              resolve([])
-            }
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke('places-autocomplete', {
+          body: { input },
+        })
+
+        if (fnError) {
+          console.error('Autocomplete error:', fnError)
+          setError('Adresssuche fehlgeschlagen')
+          return []
+        }
+
+        if (data?.error) {
+          // Don't show auth errors as they may be expected for unauthenticated users
+          if (!data.error.includes('Authentifizierung')) {
+            setError(data.error)
           }
-        )
-      })
+          return []
+        }
+
+        setError(null)
+        return data?.predictions || []
+      } catch (err) {
+        console.error('Autocomplete request failed:', err)
+        setError('Verbindungsfehler')
+        return []
+      }
     },
-    [isLoaded]
+    []
   )
 
   const getPlaceDetails = useCallback(
     async (placeId: string): Promise<ParsedAddress | null> => {
-      if (!isLoaded || !window.google) return null
+      if (!placeId) return null
 
-      return new Promise((resolve) => {
-        const service = new window.google.maps.places.PlacesService(
-          document.createElement('div')
-        )
-        service.getDetails(
-          {
-            placeId,
-            fields: ['formatted_address', 'address_components', 'geometry'],
-          },
-          (place, status) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-              const parsed = parseAddressComponents(place, placeId)
-              resolve(parsed)
-            } else {
-              resolve(null)
-            }
-          }
-        )
-      })
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke('places-details', {
+          body: { placeId },
+        })
+
+        if (fnError) {
+          console.error('Place details error:', fnError)
+          setError('Adressdetails konnten nicht geladen werden')
+          return null
+        }
+
+        if (data?.error) {
+          setError(data.error)
+          return null
+        }
+
+        setError(null)
+        return data?.address || null
+      } catch (err) {
+        console.error('Place details request failed:', err)
+        setError('Verbindungsfehler')
+        return null
+      }
     },
-    [isLoaded]
+    []
+  )
+
+  const getStaticMapUrl = useCallback(
+    (lat: number, lng: number, width = 600, height = 300, zoom = 16): string => {
+      const projectUrl = import.meta.env.VITE_SUPABASE_URL
+      return `${projectUrl}/functions/v1/static-map?lat=${lat}&lng=${lng}&width=${width}&height=${height}&zoom=${zoom}`
+    },
+    []
   )
 
   return {
-    isLoaded,
+    isLoaded: true, // Always "loaded" since we use backend APIs
     error,
     getPlacePredictions,
     getPlaceDetails,
-  }
-}
-
-function parseAddressComponents(place: google.maps.places.PlaceResult, placeId: string): ParsedAddress {
-  const components = place.address_components || []
-  
-  const getComponent = (type: string): string => {
-    const component = components.find(c => c.types.includes(type))
-    return component?.long_name || ''
-  }
-
-  const location = place.geometry?.location
-
-  return {
-    street: getComponent('route'),
-    houseNumber: getComponent('street_number'),
-    postalCode: getComponent('postal_code'),
-    city: getComponent('locality') || getComponent('administrative_area_level_2'),
-    country: getComponent('country'),
-    lat: location?.lat() ?? 0,
-    lng: location?.lng() ?? 0,
-    formattedAddress: place.formatted_address || '',
-    placeId,
+    getStaticMapUrl,
   }
 }
 

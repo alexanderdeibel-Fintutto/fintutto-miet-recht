@@ -1,5 +1,3 @@
-/// <reference types="@types/google.maps" />
-import { useEffect, useRef, useState } from 'react'
 import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 import { Loader2, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -21,71 +19,7 @@ export function MapPreview({
   height = '300px',
   zoom = 16,
 }: MapPreviewProps) {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<google.maps.Map | null>(null)
-  const markerRef = useRef<google.maps.Marker | null>(null)
-  const [isMapReady, setIsMapReady] = useState(false)
-  
-  const { isLoaded, error } = useGoogleMaps()
-
-  // Initialize map
-  useEffect(() => {
-    if (!isLoaded || !mapRef.current || !lat || !lng) return
-
-    if (!mapInstanceRef.current) {
-      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-        center: { lat, lng },
-        zoom,
-        disableDefaultUI: true,
-        zoomControl: true,
-        mapTypeControl: false,
-        streetViewControl: true,
-        fullscreenControl: true,
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }],
-          },
-        ],
-      })
-      setIsMapReady(true)
-    }
-
-    // Update center and marker
-    const position = { lat, lng }
-    mapInstanceRef.current.setCenter(position)
-
-    if (markerRef.current) {
-      markerRef.current.setPosition(position)
-    } else {
-      markerRef.current = new window.google.maps.Marker({
-        position,
-        map: mapInstanceRef.current,
-        animation: window.google.maps.Animation.DROP,
-        title: address || 'Standort',
-      })
-
-      // Add info window
-      if (address) {
-        const infoWindow = new window.google.maps.InfoWindow({
-          content: `<div class="p-2 font-sans"><strong>${address}</strong></div>`,
-        })
-        markerRef.current.addListener('click', () => {
-          infoWindow.open(mapInstanceRef.current, markerRef.current)
-        })
-      }
-    }
-  }, [isLoaded, lat, lng, zoom, address])
-
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (markerRef.current) {
-        markerRef.current.setMap(null)
-      }
-    }
-  }, [])
+  const { getStaticMapUrl, error } = useGoogleMaps()
 
   if (error) {
     return (
@@ -118,14 +52,41 @@ export function MapPreview({
     )
   }
 
+  // Calculate dimensions based on height (assuming 2:1 aspect ratio for map)
+  const heightNum = parseInt(height) || 300
+  const width = Math.min(heightNum * 2, 600)
+
+  const mapUrl = getStaticMapUrl(lat, lng, width, heightNum, zoom)
+
   return (
-    <div className={cn('relative rounded-lg overflow-hidden', className)} style={{ height }}>
-      {(!isLoaded || !isMapReady) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      )}
-      <div ref={mapRef} className="w-full h-full" />
+    <div className={cn('relative rounded-lg overflow-hidden bg-muted', className)} style={{ height }}>
+      <img
+        src={mapUrl}
+        alt={address || 'Kartenansicht'}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        onError={(e) => {
+          // Hide broken image and show fallback
+          const target = e.target as HTMLImageElement
+          target.style.display = 'none'
+          const parent = target.parentElement
+          if (parent) {
+            parent.innerHTML = `
+              <div class="flex flex-col items-center justify-center h-full gap-2">
+                <svg class="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <p class="text-sm text-muted-foreground">${lat.toFixed(4)}, ${lng.toFixed(4)}</p>
+              </div>
+            `
+          }
+        }}
+      />
+      {/* Loading overlay */}
+      <div className="absolute inset-0 flex items-center justify-center bg-muted/50 opacity-0 transition-opacity" id="map-loading">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
     </div>
   )
 }
