@@ -88,7 +88,11 @@ export function PersonField({
             fieldId="person"
             fieldType="person"
             context={{ currentValue: value }}
-            onSuggestion={(suggestion) => onChange({ ...value, ...suggestion })}
+            onSuggestion={(suggestion) => {
+              if (suggestion && typeof suggestion === 'object') {
+                onChange({ ...value, ...(suggestion as Partial<PersonData>) })
+              }
+            }}
           />
         )}
       </div>

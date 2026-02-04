@@ -1,7 +1,5 @@
-'use client'
-
 import * as React from 'react'
-import { Euro, Calculator, Sparkles } from 'lucide-react'
+import { Euro, Calculator } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -12,7 +10,7 @@ import { AIFieldHelper } from '@/components/ai/AIFieldHelper'
 interface CurrencyFieldProps {
   value: number | null
   onChange: (value: number | null) => void
-  label: string
+  label?: string
   required?: boolean
   min?: number
   max?: number
@@ -31,11 +29,10 @@ interface CurrencyFieldProps {
 export function CurrencyField({
   value,
   onChange,
-  label,
+  label = '',
   required = false,
   min,
   max,
-  step = 0.01,
   helperText,
   error,
   disabled = false,
@@ -94,9 +91,11 @@ export function CurrencyField({
     }
   }
 
-  const handleAISuggestion = (suggestion: number) => {
-    onChange(suggestion)
-    setInputValue(suggestion.toFixed(2).replace('.', ','))
+  const handleAISuggestion = (suggestion: unknown) => {
+    if (typeof suggestion === 'number') {
+      onChange(suggestion)
+      setInputValue(suggestion.toFixed(2).replace('.', ','))
+    }
   }
 
   const isOutOfRange = value !== null && (
