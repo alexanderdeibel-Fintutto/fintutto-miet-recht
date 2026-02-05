@@ -93,17 +93,17 @@ export default function HomePage() {
                 Mietvertrag erstellen
               </Button>
             </Link>
-            <a href="#formulare">
+            <Link to="/formulare">
               <Button size="lg" variant="outline">
                 Alle Formulare ansehen
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Formulare Section - Dynamic from Database */}
-      <FormulareSection />
+      {/* Formulare Section - Limited preview on homepage */}
+      <FormulareSection limit={8} showSearch={false} showFilters={false} />
 
       {/* Rechner Section */}
       <section className="container mx-auto px-4 py-16 bg-muted/50">
