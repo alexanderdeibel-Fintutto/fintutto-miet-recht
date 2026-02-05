@@ -19,6 +19,42 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { FormTemplate, TIER_CONFIG, PERSONA_LABELS } from '@/hooks/useFormTemplates'
+import { cn } from '@/lib/utils'
+
+// Category-based color themes
+const CATEGORY_THEMES: Record<string, { gradient: string; iconBg: string; iconColor: string }> = {
+  vertraege: {
+    gradient: 'from-blue-500/20 via-blue-400/10 to-transparent',
+    iconBg: 'bg-gradient-to-br from-blue-500 to-blue-600',
+    iconColor: 'text-white'
+  },
+  schreiben: {
+    gradient: 'from-violet-500/20 via-violet-400/10 to-transparent',
+    iconBg: 'bg-gradient-to-br from-violet-500 to-violet-600',
+    iconColor: 'text-white'
+  },
+  protokolle: {
+    gradient: 'from-emerald-500/20 via-emerald-400/10 to-transparent',
+    iconBg: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+    iconColor: 'text-white'
+  },
+  abrechnungen: {
+    gradient: 'from-amber-500/20 via-amber-400/10 to-transparent',
+    iconBg: 'bg-gradient-to-br from-amber-500 to-amber-600',
+    iconColor: 'text-white'
+  },
+  sonstige: {
+    gradient: 'from-slate-500/20 via-slate-400/10 to-transparent',
+    iconBg: 'bg-gradient-to-br from-slate-500 to-slate-600',
+    iconColor: 'text-white'
+  },
+}
+
+const DEFAULT_THEME = {
+  gradient: 'from-primary/20 via-primary/10 to-transparent',
+  iconBg: 'bg-gradient-to-br from-primary to-primary/80',
+  iconColor: 'text-white'
+}
 
 // Icon mapping based on slug patterns
 const getIconForSlug = (slug: string): LucideIcon => {
@@ -47,6 +83,7 @@ export function FormularCard({ template }: FormularCardProps) {
   const Icon = getIconForSlug(template.slug)
   const tierConfig = TIER_CONFIG[template.tier] || TIER_CONFIG.basic
   const personaLabel = PERSONA_LABELS[template.persona]
+  const theme = CATEGORY_THEMES[template.category] || DEFAULT_THEME
 
   // Map slug to route - some have dedicated pages, others go to generic form page
   const getHref = (slug: string) => {
@@ -66,34 +103,51 @@ export function FormularCard({ template }: FormularCardProps) {
   }
 
   return (
-    <Link to={getHref(template.slug)}>
-      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors shrink-0">
-              <Icon className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex flex-wrap gap-1 justify-end">
-              {template.tier === 'premium' && (
-                <Badge variant={tierConfig.variant} className="text-xs">
-                  {tierConfig.label}
-                </Badge>
-              )}
-              {template.tier === 'free' && (
-                <Badge variant="secondary" className="text-xs">
-                  Gratis
-                </Badge>
-              )}
-            </div>
+    <Link to={getHref(template.slug)} className="block h-full">
+      <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group border-0 shadow-md hover:-translate-y-1">
+        {/* Gradient Header */}
+        <div className={cn(
+          "h-20 relative bg-gradient-to-br",
+          theme.gradient,
+          "flex items-center justify-center"
+        )}>
+          {/* Icon Container */}
+          <div className={cn(
+            "w-14 h-14 rounded-xl flex items-center justify-center shadow-lg",
+            "transform group-hover:scale-110 transition-transform duration-300",
+            theme.iconBg
+          )}>
+            <Icon className={cn("h-7 w-7", theme.iconColor)} />
           </div>
-          <CardTitle className="text-base leading-tight mt-2">{template.name}</CardTitle>
-          <CardDescription className="text-xs line-clamp-2">
+          
+          {/* Tier Badge - Top Right */}
+          <div className="absolute top-2 right-2">
+            {template.tier === 'premium' && (
+              <Badge variant={tierConfig.variant} className="text-xs font-medium shadow-sm">
+                {tierConfig.label}
+              </Badge>
+            )}
+            {template.tier === 'free' && (
+              <Badge variant="secondary" className="text-xs font-medium bg-white/90 shadow-sm">
+                Gratis
+              </Badge>
+            )}
+          </div>
+        </div>
+        
+        {/* Content */}
+        <CardHeader className="pb-2 pt-4">
+          <CardTitle className="text-sm font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+            {template.name}
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="pt-0 pb-4">
+          <CardDescription className="text-xs line-clamp-2 mb-3">
             {template.description}
           </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
           {personaLabel && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs bg-muted/50">
               {personaLabel}
             </Badge>
           )}
