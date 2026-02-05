@@ -13,16 +13,37 @@ type CategoryFilter = 'all' | string
 // Map slug to route
 const getHref = (slug: string) => {
   const dedicatedRoutes: Record<string, string> = {
+    // Mietverträge
+    'mietvertrag': '/formulare/mietvertrag',
     'mietvertrag-standard': '/formulare/mietvertrag',
+    'mietvertrag-moebliert': '/formulare/mietvertrag',
+    'mietvertrag-wg': '/formulare/mietvertrag',
+    'mietvertrag-gewerbe': '/formulare/mietvertrag',
+    'indexmietvertrag': '/formulare/mietvertrag',
+    'staffelmietvertrag': '/formulare/mietvertrag',
+    // Kündigungen
     'kuendigung-mieter': '/formulare/kuendigung',
     'kuendigung-vermieter': '/formulare/kuendigung',
+    'kuendigung-eigenbedarf': '/formulare/kuendigung',
+    'kuendigung-fristlos': '/formulare/kuendigung',
+    'kuendigung-ordentlich': '/formulare/kuendigung',
+    'sonderkuendigung': '/formulare/kuendigung',
+    // Protokolle
     'uebergabeprotokoll': '/formulare/uebergabeprotokoll',
+    'uebergabe-einzug': '/formulare/uebergabeprotokoll',
+    'uebergabe-auszug': '/formulare/uebergabeprotokoll',
+    // Abrechnungen
     'nebenkostenabrechnung': '/formulare/betriebskosten',
+    // Mieterhöhungen
     'mieterhoehung': '/formulare/mieterhoehung',
     'mieterhoehung-standard': '/formulare/mieterhoehung',
+    'index-anpassung': '/formulare/mieterhoehung',
+    // Weitere
     'maengelanzeige': '/formulare/maengelanzeige',
     'selbstauskunft': '/formulare/selbstauskunft',
+    'mieterselbstauskunft': '/formulare/selbstauskunft',
     'untermietvertrag': '/formulare/untermietvertrag',
+    'untermieterlaubnis': '/formulare/untermietvertrag',
   }
   return dedicatedRoutes[slug] || `/formulare/${slug}`
 }

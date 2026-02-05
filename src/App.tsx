@@ -16,6 +16,7 @@ import Register from '@/pages/auth/Register'
 
 // Formulare
 import FormulareIndex from '@/pages/formulare/Index'
+import GenericForm from '@/pages/formulare/GenericForm'
 import Mietvertrag from '@/pages/formulare/Mietvertrag'
 import Kuendigung from '@/pages/formulare/Kuendigung'
 import Uebergabeprotokoll from '@/pages/formulare/Uebergabeprotokoll'
@@ -60,6 +61,8 @@ function App() {
         <Route path="/formulare/maengelanzeige" element={<Maengelanzeige />} />
         <Route path="/formulare/selbstauskunft" element={<Selbstauskunft />} />
         <Route path="/formulare/untermietvertrag" element={<Untermietvertrag />} />
+        {/* Catch-all for forms in development */}
+        <Route path="/formulare/:slug" element={<GenericForm />} />
 
         {/* Rechner */}
         <Route path="/rechner/mietpreis" element={<Mietpreisrechner />} />
