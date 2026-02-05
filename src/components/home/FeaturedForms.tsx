@@ -71,21 +71,27 @@ export function FeaturedForms() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {FEATURED_FORMS.map((form) => (
+        {FEATURED_FORMS.map((form, index) => (
           <Link key={form.slug} to={form.href}>
-            <Card className="h-full hover:shadow-lg hover:border-primary/50 transition-all duration-200 cursor-pointer group">
+            <Card 
+              className="h-full hover:shadow-lg hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group animate-fade-in opacity-0"
+              style={{ 
+                animationDelay: `${index * 100}ms`,
+                animationFillMode: 'forwards'
+              }}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="p-2.5 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                  <div className="p-2.5 bg-primary/10 rounded-lg group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                     <form.icon className="h-5 w-5 text-primary" />
                   </div>
                   {form.badge && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
                       {form.badge}
                     </Badge>
                   )}
                 </div>
-                <CardTitle className="text-lg mt-3 group-hover:text-primary transition-colors">
+                <CardTitle className="text-lg mt-3 group-hover:text-primary transition-colors duration-300">
                   {form.title}
                 </CardTitle>
                 <CardDescription className="text-sm">
