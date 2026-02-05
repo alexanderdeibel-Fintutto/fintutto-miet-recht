@@ -10,6 +10,18 @@ import { cn } from '@/lib/utils'
 
 type CategoryFilter = 'all' | string
 
+// Popular forms for quick access
+const POPULAR_FORMS = [
+  { slug: 'mietvertrag-standard', label: 'Mietvertrag' },
+  { slug: 'kuendigung-mieter', label: 'Kündigung (Mieter)' },
+  { slug: 'uebergabeprotokoll', label: 'Übergabeprotokoll' },
+  { slug: 'nebenkostenabrechnung', label: 'Nebenkostenabrechnung' },
+  { slug: 'maengelanzeige', label: 'Mängelanzeige' },
+  { slug: 'mieterselbstauskunft', label: 'Selbstauskunft' },
+  { slug: 'wohnungsgeberbestaetigung', label: 'Wohnungsgeberbestätigung' },
+  { slug: 'sepa-lastschrift', label: 'SEPA-Mandat' },
+]
+
 // Map slug to route
 const getHref = (slug: string) => {
   const dedicatedRoutes: Record<string, string> = {
@@ -217,11 +229,29 @@ export function FormulareSection({
                 )}
               </div>
             )}
-          </div>
+        </div>
           {searchQuery && !showSuggestions && (
             <p className="text-center text-sm text-muted-foreground mt-3">
               {allFilteredTemplates.length} {allFilteredTemplates.length === 1 ? 'Ergebnis' : 'Ergebnisse'} für "{searchQuery}"
             </p>
+          )}
+          
+          {/* Popular Quick Links */}
+          {!searchQuery && (
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground mb-3">Beliebte Formulare:</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {POPULAR_FORMS.map((form) => (
+                  <Link
+                    key={form.slug}
+                    to={getHref(form.slug)}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    {form.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
