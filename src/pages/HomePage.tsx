@@ -4,89 +4,14 @@ import {
   Calculator,
   Home,
   FileSignature,
-  ClipboardList,
   Euro,
-  TrendingUp,
-  AlertTriangle,
-  Key,
-  Users,
   Building2,
   Sparkles
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-
-const formulare = [
-  {
-    id: 'mietvertrag',
-    title: 'Mietvertrag Wohnraum',
-    description: 'Vollständiger Wohnraummietvertrag mit allen wichtigen Klauseln',
-    icon: FileSignature,
-    href: '/formulare/mietvertrag',
-    badge: 'Beliebt',
-    badgeVariant: 'default' as const,
-    features: ['6-Schritte-Wizard', 'KI-Unterstützung', 'PDF-Export']
-  },
-  {
-    id: 'kuendigung',
-    title: 'Kündigung Mietvertrag',
-    description: 'Ordentliche und außerordentliche Kündigung für Mieter und Vermieter',
-    icon: FileText,
-    href: '/formulare/kuendigung',
-    badge: 'Neu',
-    badgeVariant: 'secondary' as const,
-    features: ['Fristberechnung', 'Rechtssichere Formulierung']
-  },
-  {
-    id: 'uebergabeprotokoll',
-    title: 'Wohnungsübergabeprotokoll',
-    description: 'Detailliertes Protokoll für Ein- und Auszug',
-    icon: ClipboardList,
-    href: '/formulare/uebergabeprotokoll',
-    features: ['Raumweise Erfassung', 'Zählerstände', 'Fotos']
-  },
-  {
-    id: 'betriebskosten',
-    title: 'Betriebskostenabrechnung',
-    description: 'Korrekte Abrechnung aller umlagefähigen Nebenkosten',
-    icon: Euro,
-    href: '/formulare/betriebskosten',
-    features: ['17 Kostenarten', 'Automatische Berechnung']
-  },
-  {
-    id: 'mieterhoehung',
-    title: 'Mieterhöhungsverlangen',
-    description: 'Formgerechte Mieterhöhung mit Begründung',
-    icon: TrendingUp,
-    href: '/formulare/mieterhoehung',
-    features: ['Kappungsgrenze', 'Mietspiegel-Referenz']
-  },
-  {
-    id: 'maengelanzeige',
-    title: 'Mängelanzeige',
-    description: 'Professionelle Meldung von Wohnungsmängeln',
-    icon: AlertTriangle,
-    href: '/formulare/maengelanzeige',
-    features: ['Fristsetzung', 'Mietminderung']
-  },
-  {
-    id: 'selbstauskunft',
-    title: 'Mieterselbstauskunft',
-    description: 'Standardisierte Selbstauskunft für Mietinteressenten',
-    icon: Users,
-    href: '/formulare/selbstauskunft',
-    features: ['DSGVO-konform', 'Nur zulässige Fragen']
-  },
-  {
-    id: 'untermietvertrag',
-    title: 'Untermietvertrag',
-    description: 'Rechtssicherer Vertrag für Untervermietung',
-    icon: Key,
-    href: '/formulare/untermietvertrag',
-    features: ['Genehmigungsvorlage', 'Befristung']
-  },
-]
+import { FormulareSection } from '@/components/home/FormulareSection'
 
 const rechner = [
   {
@@ -121,7 +46,7 @@ const rechner = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -177,44 +102,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Formulare Section */}
-      <section id="formulare" className="container mx-auto px-4 py-16">
-        <div className="mb-8">
-          <h3 className="text-2xl font-bold mb-2">Formulare & Verträge</h3>
-          <p className="text-muted-foreground">
-            Wählen Sie das passende Formular für Ihr Anliegen
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {formulare.map((formular) => (
-            <Link key={formular.id} to={formular.href}>
-              <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                      <formular.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    {formular.badge && (
-                      <Badge variant={formular.badgeVariant}>{formular.badge}</Badge>
-                    )}
-                  </div>
-                  <CardTitle className="text-lg">{formular.title}</CardTitle>
-                  <CardDescription>{formular.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-1">
-                    {formular.features?.map((feature) => (
-                      <Badge key={feature} variant="outline" className="text-xs">
-                        {feature}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* Formulare Section - Dynamic from Database */}
+      <FormulareSection />
 
       {/* Rechner Section */}
       <section className="container mx-auto px-4 py-16 bg-muted/50">
