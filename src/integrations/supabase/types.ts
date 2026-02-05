@@ -1280,6 +1280,18 @@ export type Database = {
     }
     Functions: {
       count_user_documents: { Args: { _user_id: string }; Returns: number }
+      get_featured_forms: {
+        Args: { limit_count?: number }
+        Returns: {
+          category: string
+          description: string
+          name: string
+          priority_score: number
+          slug: string
+          tier: string
+          usage_count: number
+        }[]
+      }
       get_form_template_with_access: {
         Args: { template_slug: string }
         Returns: {
