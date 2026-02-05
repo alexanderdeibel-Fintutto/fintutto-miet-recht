@@ -1,14 +1,56 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Loader2, Search, X, ArrowRight } from 'lucide-react'
+import { Loader2, Search, X, ArrowRight, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { useFormTemplates, CATEGORY_LABELS } from '@/hooks/useFormTemplates'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useFormTemplates, CATEGORY_LABELS, FormTemplate } from '@/hooks/useFormTemplates'
 import { FormularCard } from './FormularCard'
 import { cn } from '@/lib/utils'
 
 type CategoryFilter = 'all' | string
+type SortOption = 'default' | 'alphabetical' | 'category' | 'popular'
+
+// Popular slugs for sorting (most used forms first)
+const POPULAR_SLUGS = [
+  'mietvertrag-standard', 'mietvertrag', 'kuendigung-mieter', 'uebergabeprotokoll',
+  'nebenkostenabrechnung', 'maengelanzeige', 'mieterselbstauskunft', 'wohnungsgeberbestaetigung',
+  'sepa-lastschrift', 'kuendigung-vermieter', 'mietbescheinigung', 'mietschuldenfreiheit'
+]
+
+const sortTemplates = (templates: FormTemplate[], sortBy: SortOption): FormTemplate[] => {
+  const sorted = [...templates]
+  
+  switch (sortBy) {
+    case 'alphabetical':
+      return sorted.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    case 'category':
+      return sorted.sort((a, b) => {
+        const catCompare = a.category.localeCompare(b.category, 'de')
+        if (catCompare !== 0) return catCompare
+        return a.name.localeCompare(b.name, 'de')
+      })
+    case 'popular':
+      return sorted.sort((a, b) => {
+        const aIndex = POPULAR_SLUGS.indexOf(a.slug)
+        const bIndex = POPULAR_SLUGS.indexOf(b.slug)
+        // Popular items first, others by sort_order
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
+        if (aIndex !== -1) return -1
+        if (bIndex !== -1) return 1
+        return (a.sort_order || 999) - (b.sort_order || 999)
+      })
+    default:
+      return sorted.sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999))
+  }
+}
 
 // Popular forms for quick access
 const POPULAR_FORMS = [
@@ -77,6 +119,7 @@ export function FormulareSection({
   showSearch = true,
   showFilters = true 
 }: FormulareSectionProps) {
+  const [sortBy, setSortBy] = useState<SortOption>('default')
   const { data: templates, isLoading, error } = useFormTemplates()
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -90,14 +133,17 @@ export function FormulareSection({
     ? [...new Set(templates.map(t => t.category))].sort()
     : []
 
-  // Filter templates by category and search
-  const allFilteredTemplates = templates?.filter(t => {
-    const matchesCategory = categoryFilter === 'all' || t.category === categoryFilter
-    const matchesSearch = searchQuery === '' || 
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    return matchesCategory && matchesSearch
-  }) || []
+  // Filter templates by category and search, then sort
+  const allFilteredTemplates = sortTemplates(
+    templates?.filter(t => {
+      const matchesCategory = categoryFilter === 'all' || t.category === categoryFilter
+      const matchesSearch = searchQuery === '' || 
+        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      return matchesCategory && matchesSearch
+    }) || [],
+    sortBy
+  )
 
   // Apply limit if specified
   const filteredTemplates = limit ? allFilteredTemplates.slice(0, limit) : allFilteredTemplates
@@ -272,26 +318,44 @@ export function FormulareSection({
           </Badge>
         </div>
         
-        {/* Category Filter */}
+        {/* Category Filter and Sort */}
         {showFilters && (
-          <div className="flex flex-wrap gap-2 mt-6">
-            <Button
-              variant={categoryFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCategoryFilter('all')}
-            >
-              Alle
-            </Button>
-            {categories.map(category => (
+          <div className="flex flex-wrap items-center gap-4 mt-6">
+            <div className="flex flex-wrap gap-2">
               <Button
-                key={category}
-                variant={categoryFilter === category ? 'default' : 'outline'}
+                variant={categoryFilter === 'all' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setCategoryFilter(category)}
+                onClick={() => setCategoryFilter('all')}
               >
-                {CATEGORY_LABELS[category] || category}
+                Alle
               </Button>
-            ))}
+              {categories.map(category => (
+                <Button
+                  key={category}
+                  variant={categoryFilter === category ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCategoryFilter(category)}
+                >
+                  {CATEGORY_LABELS[category] || category}
+                </Button>
+              ))}
+            </div>
+            
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-2 ml-auto">
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="Sortieren" />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  <SelectItem value="default">Standard</SelectItem>
+                  <SelectItem value="popular">Beliebtheit</SelectItem>
+                  <SelectItem value="alphabetical">Alphabetisch</SelectItem>
+                  <SelectItem value="category">Nach Kategorie</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
       </div>
