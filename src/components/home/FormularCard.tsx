@@ -77,9 +77,10 @@ const getIconForSlug = (slug: string): LucideIcon => {
 
 interface FormularCardProps {
   template: FormTemplate
+  variant?: 'default' | 'compact'
 }
 
-export function FormularCard({ template }: FormularCardProps) {
+export function FormularCard({ template, variant = 'default' }: FormularCardProps) {
   const Icon = getIconForSlug(template.slug)
   const tierConfig = TIER_CONFIG[template.tier] || TIER_CONFIG.basic
   const personaLabel = PERSONA_LABELS[template.persona]
@@ -102,6 +103,55 @@ export function FormularCard({ template }: FormularCardProps) {
     return dedicatedRoutes[slug] || `/formulare/${slug}`
   }
 
+  // Compact variant for overview pages - smaller icons, larger text
+  if (variant === 'compact') {
+    return (
+      <Link to={getHref(template.slug)} className="block h-full">
+        <Card className="h-full hover:shadow-md transition-all duration-200 cursor-pointer group border hover:border-primary/30">
+          <CardHeader className="pb-2 pt-4">
+            <div className="flex items-start gap-3">
+              {/* Small colored icon indicator */}
+              <div className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                theme.iconBg
+              )}>
+                <Icon className={cn("h-4 w-4", theme.iconColor)} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <CardTitle className="text-base font-semibold leading-tight group-hover:text-primary transition-colors">
+                    {template.name}
+                  </CardTitle>
+                  {template.tier === 'premium' && (
+                    <Badge variant={tierConfig.variant} className="text-xs shrink-0">
+                      {tierConfig.label}
+                    </Badge>
+                  )}
+                  {template.tier === 'free' && (
+                    <Badge variant="secondary" className="text-xs shrink-0">
+                      Gratis
+                    </Badge>
+                  )}
+                </div>
+                <CardDescription className="text-sm line-clamp-2">
+                  {template.description}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          {personaLabel && (
+            <CardContent className="pt-0 pb-3">
+              <Badge variant="outline" className="text-xs bg-muted/50">
+                {personaLabel}
+              </Badge>
+            </CardContent>
+          )}
+        </Card>
+      </Link>
+    )
+  }
+
+  // Default variant - larger icons, visual cards for homepage
   return (
     <Link to={getHref(template.slug)} className="block h-full">
       <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group border-0 shadow-md hover:-translate-y-1">

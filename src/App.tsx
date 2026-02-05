@@ -15,6 +15,7 @@ import Login from '@/pages/auth/Login'
 import Register from '@/pages/auth/Register'
 
 // Formulare
+import FormulareIndex from '@/pages/formulare/Index'
 import Mietvertrag from '@/pages/formulare/Mietvertrag'
 import Kuendigung from '@/pages/formulare/Kuendigung'
 import Uebergabeprotokoll from '@/pages/formulare/Uebergabeprotokoll'
@@ -50,6 +51,7 @@ function App() {
         <Route path="/agb" element={<AGB />} />
 
         {/* Formulare */}
+        <Route path="/formulare" element={<FormulareIndex />} />
         <Route path="/formulare/mietvertrag" element={<Mietvertrag />} />
         <Route path="/formulare/kuendigung" element={<Kuendigung />} />
         <Route path="/formulare/uebergabeprotokoll" element={<Uebergabeprotokoll />} />
