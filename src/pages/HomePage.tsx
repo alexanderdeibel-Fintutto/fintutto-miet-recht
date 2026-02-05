@@ -6,12 +6,15 @@ import {
   FileSignature,
   Euro,
   Building2,
-  Sparkles
+  Sparkles,
+  Star,
+  ArrowRight
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { FormulareSection } from '@/components/home/FormulareSection'
+import { FeaturedForms } from '@/components/home/FeaturedForms'
 
 const rechner = [
   {
@@ -101,6 +104,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Featured Forms Section */}
+      <FeaturedForms />
 
       {/* Formulare Section - Limited preview on homepage */}
       <FormulareSection limit={8} showSearch={false} showFilters={false} />
