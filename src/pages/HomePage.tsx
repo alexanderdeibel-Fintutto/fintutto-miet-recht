@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import {
   FileText,
   Calculator,
-  Home,
   FileSignature,
   Euro,
   Building2,
@@ -11,6 +10,7 @@ import {
   ArrowRight
 } from 'lucide-react'
 import heroBg from '@/assets/hero-bg.png'
+import formulareLogo from '@/assets/formulare-logo.svg'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -56,9 +56,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary rounded-lg">
-                <Home className="h-6 w-6 text-white" />
-              </div>
+              <img src={formulareLogo} alt="Formulare Logo" className="h-10 w-10 rounded-lg" />
               <div>
                 <h1 className="text-xl font-bold">Mietrecht Formulare</h1>
                 <p className="text-sm text-muted-foreground">Professionell & rechtssicher</p>
