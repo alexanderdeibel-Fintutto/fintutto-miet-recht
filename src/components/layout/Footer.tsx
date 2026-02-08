@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Home } from 'lucide-react'
+import formulareLogo from '@/assets/formulare-logo.svg'
 
 export function Footer() {
   return (
@@ -9,9 +9,7 @@ export function Footer() {
           {/* Logo & Beschreibung */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-primary rounded-lg">
-                <Home className="h-5 w-5 text-white" />
-              </div>
+              <img src={formulareLogo} alt="Mietrecht Formulare Logo" className="h-9 w-9 rounded-lg" />
               <span className="font-bold text-lg">Mietrecht Formulare</span>
             </div>
             <p className="text-sm text-muted-foreground">

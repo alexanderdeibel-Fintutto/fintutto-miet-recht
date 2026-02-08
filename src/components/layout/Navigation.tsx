@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Home, FileText, Calculator, FolderOpen, HelpCircle, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import formulareLogo from '@/assets/formulare-logo.svg'
 
 const navItems = [
   { href: '/', label: 'Start', icon: Home },
@@ -38,9 +39,7 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="p-2 bg-primary rounded-lg">
-              <Home className="h-5 w-5 text-white" />
-            </div>
+            <img src={formulareLogo} alt="Mietrecht Formulare Logo" className="h-9 w-9 rounded-lg" />
             <span className="font-bold text-lg hidden sm:block">Mietrecht Formulare</span>
           </Link>
 
