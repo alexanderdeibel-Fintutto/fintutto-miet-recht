@@ -10,6 +10,7 @@ import {
   Star,
   ArrowRight
 } from 'lucide-react'
+import heroBg from '@/assets/hero-bg.png'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -49,7 +50,7 @@ const rechner = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -75,32 +76,38 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="text-center max-w-3xl mx-auto">
-          <Badge className="mb-4" variant="secondary">
-            <Sparkles className="h-3 w-3 mr-1" />
-            Mit KI-Unterstützung
-          </Badge>
-          <h2 className="text-4xl font-bold mb-4">
-            Mietrecht-Formulare einfach erstellen
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Professionelle Mietverträge, Kündigungen und mehr - rechtssicher und
-            mit intelligenter Ausfüllhilfe. Schritt für Schritt zum fertigen Dokument.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Link to="/formulare/mietvertrag">
-              <Button size="lg" className="gap-2">
-                <FileSignature className="h-5 w-5" />
-                Mietvertrag erstellen
-              </Button>
-            </Link>
-            <Link to="/formulare">
-              <Button size="lg" variant="outline">
-                Alle Formulare ansehen
-              </Button>
-            </Link>
+      {/* Hero Section with background image */}
+      <section
+        className="relative bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${heroBg})` }}
+      >
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="relative container mx-auto px-4 py-24">
+          <div className="text-center max-w-3xl mx-auto">
+            <Badge className="mb-4 bg-white/20 text-white border-white/30 backdrop-blur-sm hover:bg-white/30">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Mit KI-Unterstützung
+            </Badge>
+            <h2 className="text-4xl font-bold mb-4 text-white drop-shadow-lg">
+              Mietrecht-Formulare einfach erstellen
+            </h2>
+            <p className="text-xl text-white/90 mb-8 drop-shadow">
+              Professionelle Mietverträge, Kündigungen und mehr - rechtssicher und
+              mit intelligenter Ausfüllhilfe. Schritt für Schritt zum fertigen Dokument.
+            </p>
+            <div className="flex justify-center gap-4">
+              <Link to="/formulare/mietvertrag">
+                <Button size="lg" className="gap-2">
+                  <FileSignature className="h-5 w-5" />
+                  Mietvertrag erstellen
+                </Button>
+              </Link>
+              <Link to="/formulare">
+                <Button size="lg" variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white backdrop-blur-sm">
+                  Alle Formulare ansehen
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
